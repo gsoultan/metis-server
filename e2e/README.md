@@ -1,24 +1,27 @@
 # End-to-end tests
 
-Playwright drives the embedded UI in Chromium against a real `metis` server and a
-seeded PostgreSQL database. CI runs it in the `e2e` job of
-`security_reliability_ci.yml`.
+Playwright drives the UI in Chromium against metis-server, in front of a real
+metis engine and a seeded PostgreSQL database. CI runs it in the `e2e` job of
+`ci.yml`, with the engine built from `gsoultan/metis` main.
 
 ## Running
 
 ```bash
-# Build the UI once (see CLAUDE.md), then:
+# With a checkout of gsoultan/metis next to this one (or METIS_ENGINE_DIR set):
 DATABASE_URL="postgres://metis:metis@localhost:5432/metis_e2e?sslmode=disable" make e2e
 ```
 
 `scripts/e2e.sh` does these steps:
 
-1. Builds the server.
-2. Starts it on `:8373` with throwaway secrets and a high rate limit.
-3. Runs the setup wizard and loads the sample through `scripts/seed-sample.sh`.
-4. Runs the suite.
+1. Builds the engine from `METIS_ENGINE_DIR` (default `../metis`), and
+   metis-server (building the UI first if `ui/dist` is empty).
+2. Starts the engine on `:8374` with throwaway secrets and a high rate limit.
+3. Runs the setup wizard and loads the sample through the engine's
+   `scripts/seed-sample.sh`.
+4. Starts metis-server on `:8373`, forwarding to the engine, and runs the suite
+   against it.
 
-The server log is copied to `test-results/server.log`.
+The logs are copied to `test-results/engine.log` and `test-results/server.log`.
 
 The run writes to the database. For that reason, the script refuses any database
 whose name does not contain `e2e`, unless `E2E_ANY_DATABASE=1` is set.

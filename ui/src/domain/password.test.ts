@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { engineRoot } from './engineSource.test';
 import { MIN_PASSWORD_LENGTH } from './password';
 
 describe('the password rule', () => {
@@ -9,7 +11,7 @@ describe('the password rule', () => {
   // rejection with no field to blame it on.
   it('is the same length the server enforces', () => {
     const source = readFileSync(
-      new URL('../../../server/domains/services/impl/user.go', import.meta.url),
+      join(engineRoot(), 'server', 'domains', 'services', 'impl', 'user.go'),
       'utf8',
     );
     const match = source.match(/const MinPasswordLength = (\d+)/);
