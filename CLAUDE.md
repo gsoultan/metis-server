@@ -10,8 +10,9 @@ forwards its API calls to a metis engine. The engine lives in
 
 - **UI and anything a person uses goes here; the engine goes in gsoultan/metis.**
   A change that needs both is two pull requests, the engine's first.
-- **Coding standards** for the UI are the engine repository's
-  `.junie/guidelines.md` (React section) until this repository has its own.
+- **Coding standards** for the UI are [`docs/guidelines.md`](docs/guidelines.md).
+  The general, low-code and roadmap rules stay in the engine repository's
+  `.junie/guidelines.md`, which applies here too.
 - **Roadmap priority is fixed**: `P0 Security & Reliability` → `P1 Scalability &
   Performance` → `P2 UX Delight`.
 - `go build` works on a fresh clone (ui/dist ships a placeholder), but the

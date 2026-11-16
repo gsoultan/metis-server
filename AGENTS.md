@@ -40,7 +40,7 @@ Discover → Work → Verify → Persist, as in the engine's manual.
 | `internal/web/**` (proxy, static files, headers) | `sec` | `arch`, `perf` |
 | `cmd/**`, `internal/config/**`, Dockerfile, compose | `arch` | `sec` |
 | `e2e/**`, CI workflows, tooling | `test` | `lead` |
-| README, this file | `pm` | `lead` |
+| README, this file, `docs/**` | `pm` | `lead` |
 
 ## 3. Repository map
 
@@ -52,6 +52,7 @@ Discover → Work → Verify → Persist, as in the engine's manual.
 | `ui/` | The React app (Vite, Mantine, TanStack Router); `ui/embed.go` embeds `ui/dist` |
 | `e2e/` | Playwright suite, run against metis-server in front of a real engine |
 | `scripts/e2e.sh` | Builds and starts both, seeds the engine, runs the suite |
+| `docs/` | UI coding guidelines (`guidelines.md`) and the UI/UX audits moved from the engine |
 
 ## 4. Verification gate
 

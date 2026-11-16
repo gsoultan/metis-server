@@ -59,6 +59,11 @@ make dev-ui            # Vite on :5273, proxying /api to an engine on :8273
 `METIS_BACKEND` points the dev server at another engine. See
 [`ui/README.md`](ui/README.md) and [`ui/TYPESCRIPT.md`](ui/TYPESCRIPT.md).
 
+The web app is React (19+), Vite, Mantine UI, React Flow, Zustand, TanStack
+Query and TanStack Router. Its coding rules are in
+[`docs/guidelines.md`](docs/guidelines.md); the UI/UX audits that shaped it are
+in [`docs/`](docs/).
+
 ## Verification
 
 ```bash
