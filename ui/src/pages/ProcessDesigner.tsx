@@ -1,6 +1,7 @@
 import {
   ReactFlow,
   Background,
+  Controls,
   BackgroundVariant,
   Panel,
   MiniMap,
@@ -21,6 +22,8 @@ import {
 import { Save, MousePointer2 } from 'lucide-react';
 import { CanvasToolbar } from '../components/designer/CanvasToolbar';
 import { DesignerHeader } from '../components/designer/DesignerHeader';
+import { RunHeader } from '../components/designer/RunHeader';
+import { useInstance } from '../hooks/useInstances';
 import { EmptyCanvasHint } from '../components/designer/EmptyCanvasHint';
 import { DesignerSidebar } from '../components/DesignerSidebar';
 import { NodeActionsContext } from '../components/designer/NodeActionsContext';
@@ -96,6 +99,16 @@ export function ProcessDesigner({
   } = designer;
 
   // All state and handlers come from the hook — no duplicate logic here.
+
+  /*
+   * A run of the process, not the process. Opening one used to open the
+   * editor, Deploy and all, so somebody looking at one expense could change
+   * the live process for every other. Over a run the diagram can be read,
+   * panned and clicked, and nothing on it can be changed.
+   */
+  const viewingRun = Boolean(instanceId);
+  const { data: runData } = useInstance(instanceId ?? null);
+  const run = runData?.instance;
 
   /**
    * Issues that make a deploy fail rather than merely warn.
@@ -255,7 +268,7 @@ export function ProcessDesigner({
 
   return (
     <Box h="calc(100vh - 60px)" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {offeredDraft && (
+      {offeredDraft && !viewingRun && (
         /*
           Unsaved work this browser kept after the last deploy. It is offered
           rather than applied: the draft could be an abandoned experiment, and
@@ -295,18 +308,22 @@ export function ProcessDesigner({
 
       <Box style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
         <Box ref={canvasRef} className={classes.canvas}>
-        <NodeActionsContext.Provider value={simulating ? null : nodeActions}>
+        <NodeActionsContext.Provider value={simulating || viewingRun ? null : nodeActions}>
         <ReactFlow<Node<BPMNNodeData>, Edge<BPMNEdgeData>>
           proOptions={{ hideAttribution: true }}
           nodes={canvasNodes}
           edges={canvasEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
+          onConnect={viewingRun ? undefined : onConnect}
           onInit={setReactFlowInstance}
           onMouseMove={onMouseMove}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
+          onDrop={viewingRun ? undefined : onDrop}
+          onDragOver={viewingRun ? undefined : onDragOver}
+          nodesDraggable={!viewingRun}
+          nodesConnectable={!viewingRun}
+          edgesReconnectable={!viewingRun}
+          deleteKeyCode={viewingRun ? null : undefined}
           onNodeClick={simulating ? onSimulationNodeClick : onNodeClick}
           onNodeDragStop={onNodeDragStop}
           onEdgeClick={onEdgeClick}
@@ -350,6 +367,10 @@ export function ProcessDesigner({
           />
           )}
 
+          {/* Over a run the tool rail is gone (it adds, deletes and undoes),
+              so zoom and fit come from here. */}
+          {viewingRun && <Controls showInteractive={false} position="bottom-right" />}
+
           {/* Remote Cursors Overlay */}
           {Object.entries(remoteCursors).map(([id, cursor]) => (
             <Box
@@ -390,32 +411,43 @@ export function ProcessDesigner({
         </ReactFlow>
         </NodeActionsContext.Provider>
 
-          <DesignerHeader
-                floating
-            processName={processName}
-            onNameChange={handleProcessNameChange}
-            processKey={processKey}
-            lastSaved={lastSaved}
-            deployedVersion={designer.deployed?.version ?? null}
-            simulating={simulating}
-            onModeChange={(mode) =>
-              navigate({
-                to: '/designer',
-                search: { ...search, mode },
-                replace: true,
-              })
-            }
-            issues={issues}
-            onSelectIssue={selectById}
-            onBack={() => navigate({ to: '/models', search: { tab: 'processes' } })}
-            onImport={onImport}
-            onExport={onExport}
-            importing={importMutation.isPending}
-            exporting={exportMutation.isPending}
-            onDeploy={onSave}
-            deploying={createDefinition.isPending}
-            deployBlockedBy={deployBlockedBy}
-          />
+          {viewingRun && instanceId ? (
+            <RunHeader
+              processName={processName}
+              instanceId={instanceId}
+              status={run?.status ?? ''}
+              currentSteps={(run?.activeNodes ?? []).map((step) => labelOf(typeof step === 'string' ? step : step.id))}
+              onBack={() => navigate({ to: '/instances' })}
+              onOpenProcess={() => navigate({ to: '/designer', search: { definitionId: definitionId ?? undefined } })}
+            />
+          ) : (
+            <DesignerHeader
+                  floating
+              processName={processName}
+              onNameChange={handleProcessNameChange}
+              processKey={processKey}
+              lastSaved={lastSaved}
+              deployedVersion={designer.deployed?.version ?? null}
+              simulating={simulating}
+              onModeChange={(mode) =>
+                navigate({
+                  to: '/designer',
+                  search: { ...search, mode },
+                  replace: true,
+                })
+              }
+              issues={issues}
+              onSelectIssue={selectById}
+              onBack={() => navigate({ to: '/models', search: { tab: 'processes' } })}
+              onImport={onImport}
+              onExport={onExport}
+              importing={importMutation.isPending}
+              exporting={exportMutation.isPending}
+              onDeploy={onSave}
+              deploying={createDefinition.isPending}
+              deployBlockedBy={deployBlockedBy}
+            />
+          )}
 
           {/*
             Canvas first: the diagram runs edge to edge, and everything else
@@ -423,7 +455,7 @@ export function ProcessDesigner({
             tools in a rail down the left, the building blocks in a flyout from
             its "+", and a step's settings in a card on the right.
           */}
-          {!simulating && (
+          {!simulating && !viewingRun && (
             <Box className={classes.rail}>
               <CanvasToolbar
                 vertical
@@ -443,7 +475,7 @@ export function ProcessDesigner({
             </Box>
           )}
 
-          {!simulating && componentsOpened && (
+          {!simulating && !viewingRun && componentsOpened && (
             <Box component="aside" aria-label="Building blocks" className={classes.flyout}>
               <Group justify="space-between" wrap="nowrap" mb={2}>
                 <Text fw={700} size="sm">
@@ -482,6 +514,7 @@ export function ProcessDesigner({
               edges={edges}
               instanceId={instanceId}
               onViewInstance={onViewInstance}
+              readOnly={viewingRun}
             />
           )}
         </Box>
