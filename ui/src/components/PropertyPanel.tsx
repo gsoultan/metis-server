@@ -86,6 +86,11 @@ interface PropertyPanelProps {
   onViewInstance?: (id: string, defId: string) => void;
   /** A card floating over the canvas, its sections in tabs, rather than a docked column. */
   floating?: boolean;
+  /**
+   * Shown over a run rather than the process: the settings can be read but not
+   * changed, and nothing can be deleted.
+   */
+  readOnly?: boolean;
 }
 
 
@@ -94,14 +99,19 @@ export function PropertyPanel({
   selectedEdge,
   onClose,
   onDelete,
-  updateNodeData,
-  updateEdgeData,
   edges = [],
   nodes = [],
   instanceId = null,
   onViewInstance,
   floating = false,
+  readOnly = false,
+  updateNodeData: editNodeData,
+  updateEdgeData: editEdgeData,
 }: PropertyPanelProps) {
+  // Over a run every edit is dropped, so a keystroke cannot reach a canvas
+  // that is showing one run of the live process.
+  const updateNodeData = readOnly ? ignoreEdit : editNodeData;
+  const updateEdgeData = readOnly ? ignoreEdit : editEdgeData;
   const expertMode = useAppStore((state) => state.expertMode);
   const setExpertMode = useAppStore((state) => state.setExpertMode);
   // Docked beside the canvas by default; full screen only when asked for, for
@@ -359,7 +369,16 @@ export function PropertyPanel({
     closed the panel — a Discard that kept everything it was asked to throw
     away. It now says what actually happens.
   */
-  const footer = (
+  const footer = readOnly ? (
+    <Group justify="space-between" wrap="nowrap" gap="sm">
+      <Text size="xs" c="dimmed">
+        This is a run. To change a step, open the process.
+      </Text>
+      <Button color="indigo" size="sm" onClick={onClose}>
+        Done
+      </Button>
+    </Group>
+  ) : (
     <Group justify="space-between" wrap="nowrap" gap="sm">
       <Button
         variant="subtle"
@@ -602,3 +621,6 @@ function EdgeConfigSection({
     </Stack>
   );
 }
+
+/** Takes an edit and does nothing with it: the panel over a run. */
+function ignoreEdit(): void {}

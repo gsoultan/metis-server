@@ -66,7 +66,6 @@ test.describe('instances', () => {
   });
 
   test('opening a run shows that run, read-only, not the process editor', async ({ page }) => {
-    knownBug('UI/UX audit #2: an instance opens the full process editor, with Deploy');
     await page.goto('/instances');
     await showOnly(page, 'New supplier check');
     await page.getByRole('button', { name: /^New supplier check #/ }).first().click();

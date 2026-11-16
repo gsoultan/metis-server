@@ -735,14 +735,19 @@ export function useProcessDesigner({ definitionId, instanceId, initialName, init
     [importMutation],
   );
 
-  useHotkeys([
-    ['mod+K', () => toggleSpotlight()],
-    ['mod+S', () => onSaveDraft()],
-    ['mod+I', () => onImport()],
-    ['mod+E', () => onExport()],
-    ['mod+Z', () => undo()],
-    ['mod+Y', () => redo()],
-  ]);
+  // Over a run only the shortcuts that change nothing: no save, import or undo.
+  useHotkeys(
+    instanceId
+      ? [['mod+E', () => onExport()]]
+      : [
+          ['mod+K', () => toggleSpotlight()],
+          ['mod+S', () => onSaveDraft()],
+          ['mod+I', () => onImport()],
+          ['mod+E', () => onExport()],
+          ['mod+Z', () => undo()],
+          ['mod+Y', () => redo()],
+        ],
+  );
 
   // Node execution status is derived data and belongs in render, not in state.
   // Untangling it means changing how nodes reach React Flow, in a 630-line hook
@@ -872,7 +877,8 @@ export function useProcessDesigner({ definitionId, instanceId, initialName, init
   const draftChecked = useRef<string | null>(null);
   useEffect(() => {
     const key = draftKey(definitionId);
-    if (draftChecked.current === key) {
+    if (draftChecked.current === key || instanceId) {
+      // A run is not edited, so there is nothing of its to offer back.
       return;
     }
     // For a saved process, wait until the server's copy has arrived so the two
@@ -899,7 +905,7 @@ export function useProcessDesigner({ definitionId, instanceId, initialName, init
       /* eslint-disable-next-line react-hooks/set-state-in-effect */
       setOfferedDraft(draft);
     }
-  }, [definitionId, loadedData, matchesDeployed]);
+  }, [definitionId, instanceId, loadedData, matchesDeployed]);
 
   // Autosave the working copy to this browser on a 3-second debounce.
   //
@@ -908,7 +914,8 @@ export function useProcessDesigner({ definitionId, instanceId, initialName, init
   // long time it was written and never read, so the header claimed "last saved"
   // while a closed tab threw the work away.
   const saveDraft = useCallback(() => {
-    if (!isWorthSaving(nodes)) {
+    if (instanceId || !isWorthSaving(nodes)) {
+      // A run shows the process; it is never a draft of it.
       return false;
     }
     if (matchesDeployed(processName, processKey, nodes, edges)) {
@@ -929,15 +936,15 @@ export function useProcessDesigner({ definitionId, instanceId, initialName, init
     }
     setLastSaved(new Date());
     return true;
-  }, [definitionId, edges, matchesDeployed, nodes, processKey, processName]);
+  }, [definitionId, edges, instanceId, matchesDeployed, nodes, processKey, processName]);
 
   useEffect(() => {
-    if (!isWorthSaving(nodes)) {
+    if (instanceId || !isWorthSaving(nodes)) {
       return;
     }
     const timer = setTimeout(saveDraft, 3000);
     return () => clearTimeout(timer);
-  }, [nodes, edges, processName, processKey, saveDraft]);
+  }, [instanceId, nodes, edges, processName, processKey, saveDraft]);
 
   /** Ctrl/Cmd-S keeps the work; it does not publish it. */
   const onSaveDraft = useCallback(() => {
