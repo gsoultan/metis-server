@@ -2,14 +2,21 @@ package ui_test
 
 import (
 	"io/fs"
+	"os"
 	"strings"
 	"testing"
 
-	"github.com/gsoultan/metis/ui"
+	"github.com/gsoultan/metis-server/ui"
 )
 
 func TestDistEmbedding(t *testing.T) {
 	distFS := ui.Dist()
+	if _, err := fs.Stat(distFS, "index.html"); err != nil {
+		if os.Getenv("METIS_REQUIRE_UI") != "" {
+			t.Fatalf("METIS_REQUIRE_UI is set but ui/dist holds no built UI: %v", err)
+		}
+		t.Skip("ui/dist holds only the placeholder; run `make ui-build` (CI sets METIS_REQUIRE_UI so this cannot skip there)")
+	}
 
 	// Check if assets folder exists
 	assetsInfo, err := fs.Stat(distFS, "assets")

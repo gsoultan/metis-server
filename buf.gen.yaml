@@ -1,0 +1,14 @@
+version: v2
+managed:
+  enabled: true
+plugins:
+  # The web app's TypeScript client, generated from the engine's protos
+  # (gsoultan/metis, api/proto). protoc-gen-es v2 emits schemas rather than
+  # message classes, and connect-es v2 consumes them directly, so service
+  # descriptors live alongside the messages.
+  - remote: buf.build/bufbuild/es:v2.13.0
+    out: ui/src/gen
+    opt:
+      - target=ts
+# No inputs here: the protos are the engine's. `make proto` passes them
+# (METIS_ENGINE_DIR/api/proto, default ../metis/api/proto).

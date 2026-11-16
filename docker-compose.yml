@@ -1,0 +1,53 @@
+# Evaluation stack: PostgreSQL, a metis engine, and metis-server in front of it.
+#
+# For trying Metis out and for local integration work, not production: the
+# secrets are literals in this file. Open http://localhost:8080.
+#
+# The engine is built from a checkout of gsoultan/metis next to this one
+# (../metis). Set METIS_ENGINE_CONTEXT if yours is elsewhere.
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: metis
+      POSTGRES_PASSWORD: metis
+      POSTGRES_DB: metis
+    volumes:
+      - metis-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metis -d metis"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  engine:
+    build:
+      context: ${METIS_ENGINE_CONTEXT:-../metis}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "host=postgres user=metis password=metis dbname=metis port=5432 sslmode=disable"
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef}
+      JWT_SECRET: ${JWT_SECRET:-evaluation-only-change-me}
+      # The two literals above are public, so the engine refuses them unless
+      # told this is an evaluation stack.
+      METIS_ALLOW_WEAK_SECRETS: "true"
+      # metis-server is the only caller on the compose network; let the engine
+      # read the browser's address from X-Forwarded-For.
+      METIS_TRUSTED_PROXIES: "172.16.0.0/12,10.0.0.0/8,192.168.0.0/16"
+    # Not published: the browser reaches the engine through metis-server.
+
+  server:
+    build:
+      context: .
+    depends_on:
+      - engine
+    environment:
+      METIS_ENGINE_URL: "http://engine:8080"
+    ports:
+      - "8080:8080"
+
+volumes:
+  metis-postgres:

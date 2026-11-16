@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { engineRoot } from './engineSource.test';
 
 /**
  * Every node type the engine can execute must be placeable in the designer.
@@ -28,9 +29,13 @@ function read(...parts: string[]): string {
   return readFileSync(join(REPO_ROOT, ...parts), 'utf8');
 }
 
+function readEngine(...parts: string[]): string {
+  return readFileSync(join(engineRoot(), ...parts), 'utf8');
+}
+
 /** The node types the engine defines, minus the two that only draw boxes. */
 function executableNodeTypes(): string[] {
-  const source = read('server', 'domains', 'entities', 'node_type.go');
+  const source = readEngine('server', 'domains', 'entities', 'node_type.go');
   const declared = [...source.matchAll(/\w+\s+NodeType = "(\w+)"/g)].map((m) => m[1]);
   return declared.filter((t) => t !== 'pool' && t !== 'lane');
 }

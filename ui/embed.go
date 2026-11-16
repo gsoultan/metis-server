@@ -1,3 +1,8 @@
+// Package ui is the built Metis web app, embedded into the metis-server binary.
+//
+// The tree tracks only ui/dist/.gitkeep, so `go build` works on a fresh clone
+// before the UI is built: the binary then answers every page with a 503 that
+// says to run `make ui-build`. A release is always built with the UI in it.
 package ui
 
 import (
@@ -5,8 +10,6 @@ import (
 	"io/fs"
 )
 
-// Build timestamp: 2026-03-09 12:05:00-v2-refined
-//
 //go:embed all:dist
 var distFS embed.FS
 

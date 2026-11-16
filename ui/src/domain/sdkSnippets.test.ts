@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { engineRoot } from './engineSource.test';
 import { snippetFor, SNIPPET_LANGUAGES } from './sdkSnippets';
 import type { SdkCall } from './sdkCalls';
 
@@ -130,8 +131,7 @@ describe('the documented wire contract', () => {
    * printed curl would 404.
    */
   it('names only routes the Go handlers register', () => {
-    const repoRoot = join(import.meta.dir, '..', '..', '..');
-    const httpsDir = join(repoRoot, 'server', 'transports', 'https');
+    const httpsDir = join(engineRoot(), 'server', 'transports', 'https');
     const registered = new Set<string>();
 
     const walk = (dir: string): void => {
