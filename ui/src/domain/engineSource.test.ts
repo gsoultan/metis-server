@@ -26,3 +26,20 @@ export function engineRoot(): string {
   }
   return root;
 }
+
+/**
+ * Where the tests that check the SDK screen's Go snippets against metis-sdk
+ * find its source: METIS_SDK_DIR, or ../metis-sdk next to this repository.
+ * Missing, the test fails with this message rather than skipping, for the
+ * same reason as engineRoot.
+ */
+export function sdkRoot(): string {
+  const configured = process.env.METIS_SDK_DIR;
+  const root = configured ? resolve(configured) : join(import.meta.dir, '..', '..', '..', '..', 'metis-sdk');
+  if (!existsSync(join(root, 'worker.go'))) {
+    throw new Error(
+      `No metis-sdk checkout at ${root}. Clone gsoultan/metis-sdk there, or set METIS_SDK_DIR to one.`,
+    );
+  }
+  return root;
+}
