@@ -1,0 +1,63 @@
+# systemd unit for the metis-server Linux packages (deb, rpm, Arch).
+#
+# The package installs this and stops there: it does not enable or start the
+# service. Point METIS_ENGINE_URL in /etc/metis-server/metis-server.env at the
+# engine first, then:
+#
+#   systemctl enable --now metis-server
+#
+# metis-server keeps no state: it serves the web app embedded in the binary
+# and forwards /api/, /healthz and /readyz to the engine. Nothing on the
+# filesystem is writable to the process.
+[Unit]
+Description=Metis web app (in front of a metis engine)
+Documentation=https://github.com/gsoultan/metis-server
+# Ordering only, for a host that runs the engine package too. Not a
+# dependency: the engine may be on another host, and an unreachable engine
+# is a 502 in the browser, not a reason for this service to stop.
+After=network-online.target metis.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=metis-server
+Group=metis-server
+EnvironmentFile=-/etc/metis-server/metis-server.env
+ExecStart=/usr/bin/metis-server
+Restart=on-failure
+RestartSec=5s
+# The server gives requests in flight 20 seconds after SIGTERM; this leaves
+# room above that before systemd escalates to SIGKILL.
+TimeoutStopSec=30s
+LimitNOFILE=65536
+
+# Hardening. The binary is static, needs no privileges, listens on an
+# unprivileged port and writes nothing.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+# Refused calls fail with EPERM rather than killing the process.
+SystemCallErrorNumber=EPERM
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

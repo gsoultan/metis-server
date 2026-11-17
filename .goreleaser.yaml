@@ -1,0 +1,223 @@
+# What a tag publishes: Linux archives and packages of metis-server, the web
+# app and the server that serves it in front of a metis engine.
+#
+# Modelled on the engine's .goreleaser.yaml (gsoultan/metis) and kept
+# consistent with it: the same formats, the same version stamp, the same
+# service layout, the same signing. The differences are what metis-server is:
+# it embeds a UI that has to be built first, it keeps no state, and it needs
+# none of the engine's secrets.
+#
+# **Linux only, deliberately**, as for the engine: it is a server, and nothing
+# tests it on macOS or Windows. Both Linux architectures ship.
+version: 2
+
+project_name: metis-server
+
+before:
+  hooks:
+    # ui/embed.go embeds ui/dist, and the tree tracks only ui/dist/.gitkeep. A
+    # binary built without this step answers every page with a 503, so the
+    # release builds the UI itself rather than trusting whatever is on disk.
+    # `bun run build` ends in the bundle budget check, as in CI.
+    #
+    # One shell line because global hooks are plain commands (the dir: form is
+    # GoReleaser Pro). The last test refuses to package a placeholder: no
+    # index.html, no release.
+    - sh -c "cd ui && bun install --frozen-lockfile && bun run build && test -f dist/index.html"
+
+builds:
+  - id: metis-server
+    main: ./cmd/metis-server
+    binary: metis-server
+    env:
+      # Pure Go; a static binary runs on a host whose libc is older than the
+      # builder's.
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      # THE VERSION STAMP, the engine's rule: the tag for a release (with its
+      # `v`, as the image is stamped from GITHUB_REF_NAME), and
+      # `<next>-snapshot-<sha>` without a `v` for a snapshot, so a laptop build
+      # never claims to be a shipped release. Repeated verbatim in the archive
+      # name below; change one, change the other.
+      - -s -w -X main.version={{ if .IsSnapshot }}{{ .Version }}{{ else }}{{ .Tag }}{{ end }}
+    # Reproducible: the same source gives the same bytes, so the checksums mean
+    # something.
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: metis-server
+    formats:
+      - tar.gz
+    name_template: "metis-server_{{ if .IsSnapshot }}{{ .Version }}{{ else }}{{ .Tag }}{{ end }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+# Linux packages: the same binary as the archives, installed the way a host's
+# package manager expects, with a service, an environment file and an account
+# to run as. deb and rpm cover Debian, Ubuntu, RHEL, Fedora, Rocky and SUSE;
+# apk is Alpine (OpenRC, not systemd); archlinux is Arch and its derivatives.
+#
+# The packages install and stop there, as the engine's do. They do not enable,
+# start or restart the service: METIS_ENGINE_URL has to be checked first, and
+# on an upgrade the web app and the engine are moved together, by the
+# operator.
+nfpms:
+  - id: metis-server
+    package_name: metis-server
+    ids:
+      - metis-server
+    formats:
+      - deb
+      - rpm
+      - apk
+      - archlinux
+    # GoReleaser's .Version, without the leading `v`, is what every package
+    # format expects; the binary inside still reports the tag (see ldflags).
+    file_name_template: "{{ .ConventionalFileName }}"
+    vendor: Gembit Soultan Shirazi
+    maintainer: Gembit Soultan Shirazi <gembit.soultan@gmail.com>
+    homepage: https://github.com/gsoultan/metis-server
+    description: |-
+      The Metis web app, in front of a metis BPMN and DMN engine.
+      A static binary with the web app embedded, run as a systemd service;
+      it forwards the app's API calls to the engine named in its settings.
+    license: MIT
+    section: net
+    priority: optional
+    bindir: /usr/bin
+    # A static binary: no shared libraries to depend on. It needs a metis
+    # engine, but not necessarily on this host, so the engine package is
+    # suggested rather than required.
+    suggests:
+      - metis
+    contents:
+      - src: deploy/linux/metis-server.service
+        dst: /usr/lib/systemd/system/metis-server.service
+        file_info:
+          mode: 0644
+        packager: deb
+      - src: deploy/linux/metis-server.service
+        dst: /usr/lib/systemd/system/metis-server.service
+        file_info:
+          mode: 0644
+        packager: rpm
+      - src: deploy/linux/metis-server.service
+        dst: /usr/lib/systemd/system/metis-server.service
+        file_info:
+          mode: 0644
+        packager: archlinux
+      - src: deploy/linux/metis-server.openrc
+        dst: /etc/init.d/metis-server
+        file_info:
+          mode: 0755
+        packager: apk
+
+      - dst: /etc/metis-server
+        type: dir
+        file_info:
+          mode: 0750
+          owner: root
+          group: metis-server
+      # config|noreplace: an upgrade never overwrites the operator's edits.
+      # Group-readable by the service only, as the engine's is, so a secret
+      # added here later is not world-readable by default.
+      - src: deploy/linux/metis-server.env
+        dst: /etc/metis-server/metis-server.env
+        type: config|noreplace
+        file_info:
+          mode: 0640
+          owner: root
+          group: metis-server
+
+      - src: LICENSE
+        dst: /usr/share/licenses/metis-server/LICENSE
+        file_info:
+          mode: 0644
+      - src: README.md
+        dst: /usr/share/doc/metis-server/README.md
+        file_info:
+          mode: 0644
+    scripts:
+      preinstall: deploy/linux/scripts/preinstall.sh
+      postinstall: deploy/linux/scripts/postinstall.sh
+      preremove: deploy/linux/scripts/preremove.sh
+      postremove: deploy/linux/scripts/postremove.sh
+    rpm:
+      group: System Environment/Daemons
+      compression: zstd
+    deb:
+      compression: zstd
+    archlinux:
+      packager: Gembit Soultan Shirazi <gembit.soultan@gmail.com>
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+# A keyless signature over checksums.txt, and through it over every archive
+# and package it lists, bound to the release workflow's OIDC identity, as the
+# engine's is.
+signs:
+  - id: checksums
+    cmd: cosign
+    artifacts: checksum
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - --yes
+      - --bundle=${signature}
+      - ${artifact}
+    output: true
+
+# One bill of materials per archive, generated from the built artifact, so it
+# lists what is actually in the binary.
+sboms:
+  - artifacts: archive
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot-{{ .ShortCommit }}"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^chore\\(ci\\):"
+      - "^chore\\(deps\\):"
+      - "^docs:"
+      - "^test:"
+
+release:
+  draft: false
+  # A pre-release tag stays marked as one.
+  prerelease: auto
+  footer: |
+    ## Running it
+
+    The `.deb`, `.rpm`, `.apk` and `.pkg.tar.zst` packages install
+    metis-server as a service; the archives are the same build for anyone
+    deploying the binary directly. It needs a metis engine
+    (https://github.com/gsoultan/metis/releases), on this host or another.
+
+    Verify a download against `checksums.txt`, and `checksums.txt` against
+    its signature:
+
+    ```
+    cosign verify-blob checksums.txt \
+      --bundle checksums.txt.sigstore.json \
+      --certificate-identity https://github.com/gsoultan/metis-server/.github/workflows/release.yml@refs/tags/{{ .Tag }} \
+      --certificate-oidc-issuer https://token.actions.githubusercontent.com
+    ```
+
+    A package installs the service without starting it: check
+    `METIS_ENGINE_URL` in `/etc/metis-server/metis-server.env`, run
+    `systemctl enable --now metis-server`, then open
+    `http://<server>:8080`.

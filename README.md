@@ -71,6 +71,29 @@ The web app's SDK page (`/sdk`) prints its Go snippets against metis-sdk; a
 test reads the SDK's source so that a snippet naming a call or field the SDK
 does not have fails the build.
 
+### Installing on Linux
+
+Each release (`v*` tag) publishes deb, rpm, apk and Arch packages for amd64
+and arm64, and plain archives, on the
+[releases page](https://github.com/gsoultan/metis-server/releases), with a
+signed `checksums.txt` (the release notes show the `cosign verify-blob`
+command). A package installs `/usr/bin/metis-server`, a hardened systemd unit
+(OpenRC on Alpine), a `metis-server` system account, and
+`/etc/metis-server/metis-server.env`, which the package manager keeps across
+upgrades. It does not start the service:
+
+```bash
+sudo apt-get install ./metis-server_<version>_amd64.deb
+sudoedit /etc/metis-server/metis-server.env   # METIS_ENGINE_URL
+sudo systemctl enable --now metis-server
+```
+
+With the engine's own package on the same host, both default to `:8080`; the
+env file says how to move the engine to `127.0.0.1:8273`. The packages are
+built by `.goreleaser.yaml`, which builds the UI first, and CI installs them on
+Debian, Rocky, Alpine and Arch and boots the deb under systemd on every pull
+request.
+
 ## Developing the UI
 
 ```bash
