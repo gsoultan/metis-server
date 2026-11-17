@@ -431,6 +431,25 @@ export interface ListLiveVersionsResponse {
   err?: string;
 }
 
+/** Where a process's scheduled starts stand, as the engine reports it. */
+export interface ApiStartScheduleStatus {
+  process_key: string;
+  /** A version that is live, or arranged to be, starts on a schedule. */
+  scheduled: boolean;
+  paused: boolean;
+  paused_at?: string;
+  /** RFC 3339, UTC. Absent while paused and when nothing is to come. */
+  next_run_at?: string;
+  /** Attempts in a row that could not start a run; the run is still owed. */
+  failures: number;
+  last_error?: string;
+}
+
+export interface StartScheduleResponse {
+  schedule?: ApiStartScheduleStatus;
+  err?: string;
+}
+
 // ─── Connectors ──────────────────────────────────────────────────────────────
 
 /**

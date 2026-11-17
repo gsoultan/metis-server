@@ -20,9 +20,10 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 // visitor, picker or not.
 import '@mantine/dates/styles.css';
 import { DateTimePicker } from '@mantine/dates';
-import { AlertTriangle, CalendarClock, CircleDot, Eye, History, MoveRight, Play, Trash2, Undo2, X } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CircleDot, Eye, History, MoveRight, Pause, Play, Trash2, Undo2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import { scheduleNotice } from '../domain/startScheduleStatus';
 import { compareLoaded, comparisonFailure, diffOf, rolloutEffect } from '../domain/versionDiff';
 import {
   canDelete,
@@ -42,6 +43,8 @@ import {
   useDeleteDefinition,
   usePromoteDefinitionVersion,
   useScheduleDefinitionVersion,
+  useSetStartSchedulePaused,
+  useStartSchedule,
 } from '../hooks/useDefinitions';
 import { useStartProcess } from '../hooks/useProcess';
 import { MigrateInstancesModal } from './MigrateInstancesModal';
@@ -99,6 +102,10 @@ export function VersionHistoryModal({ processKey, onClose, onView }: VersionHist
   const cancelScheduled = useCancelScheduledVersion();
   const startProcess = useStartProcess();
   const removeVersion = useDeleteDefinition();
+  // Whether the process starts by itself, and the switch that stops it.
+  const startSchedule = useStartSchedule(processKey);
+  const setSchedulePaused = useSetStartSchedulePaused();
+  const scheduled = scheduleNotice(startSchedule.data?.schedule);
   const [trying, setTrying] = useState<number | null>(null);
   const [confirming, setConfirming] = useState<ApiDefinitionVersion | null>(null);
   // The version a cutover is being arranged for, and the moment chosen for it.
@@ -233,6 +240,30 @@ export function VersionHistoryModal({ processKey, onClose, onView }: VersionHist
     }
   };
 
+  const runPauseSchedule = async (paused: boolean) => {
+    if (!processKey) return;
+    try {
+      await setSchedulePaused.mutateAsync({ key: processKey, paused });
+      notifications.show(paused
+        ? {
+            title: 'The schedule is paused',
+            message: 'Nothing starts by itself until you resume it. Starting it by hand still works.',
+            color: 'gray',
+          }
+        : {
+            title: 'The schedule is running again',
+            message: 'It carries on from the next scheduled time. Nothing is started for the times it missed.',
+            color: 'green',
+          });
+    } catch (err: unknown) {
+      notifications.show({
+        title: paused ? 'Could not pause the schedule' : 'Could not resume the schedule',
+        message: errorMessage(err, 'The schedule was not changed.'),
+        color: 'red',
+      });
+    }
+  };
+
   const runPromote = async (version: ApiDefinitionVersion) => {
     if (!processKey) return;
     try {
@@ -280,6 +311,44 @@ export function VersionHistoryModal({ processKey, onClose, onView }: VersionHist
                 : `${draining.length} older versions are still finishing work.`}{' '}
               They keep running until they are done — deleting one would strand the instances on it.
             </Text>
+          </Alert>
+        )}
+
+        {!isLoading && !error && scheduled !== null && (
+          <Alert
+            color={scheduled.state === 'paused' ? 'orange' : 'blue'}
+            icon={scheduled.state === 'paused' ? <Pause size={16} /> : <CalendarClock size={16} />}
+            radius="md"
+          >
+            <Stack gap={4}>
+              <Group gap="xs" justify="space-between" wrap="nowrap">
+                <Text size="sm" fw={600}>
+                  {scheduled.state === 'paused' ? 'The schedule is paused' : 'Starts on a schedule'}
+                </Text>
+                <Button
+                  size="compact-xs"
+                  variant="subtle"
+                  color="gray"
+                  leftSection={scheduled.state === 'paused' ? <Play size={12} /> : <Pause size={12} />}
+                  loading={setSchedulePaused.isPending}
+                  onClick={() => runPauseSchedule(scheduled.state !== 'paused')}
+                >
+                  {scheduled.state === 'paused' ? 'Resume schedule' : 'Pause schedule'}
+                </Button>
+              </Group>
+              <Text size="xs">
+                {scheduled.state === 'paused'
+                  ? `${scheduled.pausedAt ? `Paused on ${formatCutover(scheduled.pausedAt)}. ` : ''}Nothing starts by itself until you resume it. Starting it by hand still works.`
+                  : scheduled.nextRun
+                    ? `Next run on ${formatCutover(scheduled.nextRun)} (${dayjs(scheduled.nextRun).fromNow()}).`
+                    : 'No more runs are scheduled.'}
+              </Text>
+              {scheduled.failure !== null && (
+                <Text size="xs" c="red">
+                  The last scheduled start failed and is being tried again: {scheduled.failure}
+                </Text>
+              )}
+            </Stack>
           </Alert>
         )}
 
