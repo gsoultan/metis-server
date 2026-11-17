@@ -225,7 +225,7 @@ test.describe('a new process', () => {
     const about = await designer.openTab('Ask a person', 'About');
     await about.getByRole('textbox', { name: 'Name' }).fill('Check the paperwork');
 
-    await deploy(page, 'v1');
+    await designer.deploy('v1');
     await page.goto('/models?tab=processes');
     const row = page.getByRole('row', { name: new RegExp(name) });
     await expect(row).toContainText('v1 live');
@@ -241,28 +241,8 @@ test.describe('a new process', () => {
     await designer.openFromProcesses(name);
     const again = await designer.openTab('Check the paperwork', 'About');
     await again.getByRole('textbox', { name: 'Name' }).fill('Check the paperwork twice');
-    await deploy(page, 'v2');
+    await designer.deploy('v2');
     await page.goto('/models?tab=processes');
     await expect(page.getByRole('row', { name: new RegExp(name) })).toContainText('v2 live');
   });
 });
-
-/**
- * Deploys what is on the canvas as the live version, through whatever the
- * designer asks first: the checklist when there are warnings, and, from the
- * second version on, whether the new one goes live now or is staged.
- */
-async function deploy(page: import('@playwright/test').Page, version: string): Promise<void> {
-  await page.getByRole('button', { name: 'Deploy', exact: true }).click();
-  const checklist = page.getByRole('dialog', { name: 'Pre-deployment Checklist' });
-  const confirm = page.getByRole('dialog', { name: new RegExp(`^Deploy .* ${version}$`) });
-  const deployed = page.getByText('Process definition deployed successfully!');
-  await expect(checklist.or(confirm).or(deployed)).toBeVisible();
-  if (await checklist.isVisible()) await checklist.getByRole('button', { name: 'Deploy Anyway' }).click();
-  await expect(confirm.or(deployed)).toBeVisible();
-  if (await confirm.isVisible()) {
-    await expect(confirm.getByRole('radio', { name: new RegExp(`Make ${version} the live version`) })).toBeChecked();
-    await confirm.getByRole('button', { name: `Deploy ${version} live` }).click();
-  }
-  await expect(deployed).toBeVisible();
-}

@@ -3,6 +3,7 @@ import { vocabularyFor } from './bpmnVocabulary';
 import { isSensitiveKey } from './connectorSecrets';
 import { parseFormDefinition } from './formDefinition';
 import { humanizeIdentifier } from './wording';
+import { describeSchedule, readSchedule } from './startSchedule';
 
 /**
  * What a step is set up to do, read out as labelled settings.
@@ -228,6 +229,7 @@ const PROPERTY_WORDS: Record<string, Read> = {
   timer_duration: waited('wait'),
   signal_name: said('signal name'),
   message_name: said('message name'),
+  start_schedule: (key, raw) => scheduleSetting(key, raw),
   correlation_key: said('message belonging to'),
   condition_expression: said('carry on when'),
   escalation_code: said('reason code'),
@@ -241,6 +243,13 @@ const PROPERTY_WORDS: Record<string, Read> = {
   separation_of_duties: (key, raw, version) => stepList(key, 'not by whoever did', plain(raw), version),
   actor: said('done by'),
 };
+
+/** A start step's schedule, as the sentence the panel shows for it. */
+function scheduleSetting(key: string, raw: unknown): StepSetting {
+  const schedule = readSchedule(raw);
+  const value = plain(raw);
+  return shown(key, 'runs on a schedule', value, schedule ? describeSchedule(schedule) : value);
+}
 
 function propertySettings(node: ApiNode, version: VersionIndex): StepSetting[] {
   const properties = node.properties ?? {};

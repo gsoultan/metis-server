@@ -469,3 +469,35 @@ describe('a step that fills in fields for its connector', () => {
     expect(validateProcess(nodes, edges)).toEqual([]);
   });
 });
+
+describe('a start step that would start nothing', () => {
+  const withStart = (data: Record<string, unknown>) => {
+    const { nodes, edges } = straightThrough();
+    return validateProcess(
+      nodes.map((n) => (n.type === 'startEvent' ? { ...n, data: { ...n.data, ...data } } : n)),
+      edges,
+    ).filter((issue) => issue.message.includes('schedule') || issue.message.includes('listen'));
+  };
+
+  it('is said before the server refuses a schedule that cannot run', () => {
+    const issues = withStart({ start_schedule: { every: 'week', days: [], at: '09:00', time_zone: 'UTC' } });
+    expect(issues).toHaveLength(1);
+    expect(issues[0].severity).toBe('error');
+    expect(issues[0].message).toContain('cannot run: Choose at least one day of the week.');
+  });
+
+  it('is a warning for a message or signal with no name: it still deploys', () => {
+    const issues = withStart({ startedBy: 'message' });
+    expect(issues).toHaveLength(1);
+    expect(issues[0].severity).toBe('warning');
+    expect(issues[0].message).toContain('Give the message a name');
+  });
+
+  it('is not said of a start that works', () => {
+    expect(withStart({})).toEqual([]);
+    expect(withStart({ messageName: 'order-placed' })).toEqual([]);
+    expect(withStart({ start_schedule: { every: 'day', at: '09:00', time_zone: 'UTC' } })).toEqual([]);
+    // An older step's note that never started anything is not a new warning.
+    expect(withStart({ startedBy: 'timer' })).toEqual([]);
+  });
+});

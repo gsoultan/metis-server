@@ -23,6 +23,7 @@ import { NODE_VOCABULARY, isEndingNode, vocabularyFor } from './bpmnVocabulary';
 import { missingStepFields, type StepSchemas, unmappedParameters } from './connectorStep';
 import { connection, serviceImplementation, webAddress, workerTopic } from './serviceImplementation';
 import { isExpression, type AssignmentDirectory } from './assignmentDirectory';
+import { startTriggerOf, startTriggerProblems, type StartStepData } from './startTrigger';
 
 export type IssueSeverity = 'error' | 'warning';
 
@@ -291,6 +292,34 @@ function namesSomebody(node: CheckableNode): boolean {
   );
 }
 
+/**
+ * A start step that says how the process starts and would start nothing.
+ *
+ * A schedule that cannot run is an error: the server refuses to deploy it,
+ * and saying so on the step beats a refused deploy. A message or signal with
+ * no name is a warning, because the process still deploys and can still be
+ * started by hand, but the start its author chose will never happen.
+ */
+function startTriggerIssues(nodes: CheckableNode[]): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  for (const node of nodes) {
+    if (node.type !== 'startEvent' || !node.data) continue;
+    const data = node.data as StartStepData;
+    const scheduled = startTriggerOf(data) === 'schedule';
+    for (const problem of startTriggerProblems(data)) {
+      issues.push({
+        message: scheduled
+          ? `The schedule on "${stepName(node)}" cannot run: ${problem}`
+          : `"${stepName(node)}" has no name to listen for: ${problem}`,
+        severity: scheduled ? 'error' : 'warning',
+        id: node.id,
+        suggestion: scheduled ? 'Fix the schedule on the step.' : 'Type the name on the step, or choose another way to start.',
+      });
+    }
+  }
+  return issues;
+}
+
 function nobodyNamedIssues(nodes: CheckableNode[]): ValidationIssue[] {
   return nodes.map(nobodyNamedIssue).filter((issue): issue is ValidationIssue => issue !== undefined);
 }
@@ -359,6 +388,7 @@ export function validateProcess(
     ...connectorStepIssues(nodes, stepSchemas),
     ...unpointedServiceTaskIssues(nodes),
     ...nobodyNamedIssues(nodes),
+    ...startTriggerIssues(nodes),
     ...(directory ? unknownNameIssues(nodes, directory) : []),
   ];
   const starts = nodes.filter((n) => n.type === 'startEvent');

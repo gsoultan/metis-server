@@ -44,4 +44,25 @@ export class Designer {
     await panel.getByRole('tab', { name: tab }).click();
     return panel.getByRole('tabpanel', { name: tab });
   }
+
+  /**
+   * Deploys what is on the canvas as the live version, through whatever the
+   * designer asks first: the checklist when there are warnings, and, from the
+   * second version on, whether the new one goes live now or is staged.
+   */
+  async deploy(version: string): Promise<void> {
+    const page = this.page;
+    await page.getByRole('button', { name: 'Deploy', exact: true }).click();
+    const checklist = page.getByRole('dialog', { name: 'Pre-deployment Checklist' });
+    const confirm = page.getByRole('dialog', { name: new RegExp(`^Deploy .* ${version}$`) });
+    const deployed = page.getByText('Process definition deployed successfully!');
+    await expect(checklist.or(confirm).or(deployed)).toBeVisible();
+    if (await checklist.isVisible()) await checklist.getByRole('button', { name: 'Deploy Anyway' }).click();
+    await expect(confirm.or(deployed)).toBeVisible();
+    if (await confirm.isVisible()) {
+      await expect(confirm.getByRole('radio', { name: new RegExp(`Make ${version} the live version`) })).toBeChecked();
+      await confirm.getByRole('button', { name: `Deploy ${version} live` }).click();
+    }
+    await expect(deployed).toBeVisible();
+  }
 }
