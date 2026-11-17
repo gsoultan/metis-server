@@ -2,7 +2,10 @@ module github.com/gsoultan/metis-server
 
 go 1.27.4
 
-require github.com/gsoultan/metis v0.7.7-0.20261117134250-3b2fb8ed388e
+require (
+	github.com/google/uuid v1.6.0
+	github.com/gsoultan/metis v0.7.7-0.20261117134250-3b2fb8ed388e
+)
 
 require (
 	aidanwoods.dev/go-paseto v1.6.0 // indirect
@@ -72,7 +75,6 @@ require (
 	github.com/google/certificate-transparency-go v1.4.0 // indirect
 	github.com/google/go-containerregistry v0.22.1 // indirect
 	github.com/google/pprof v0.0.0-20260604005048-7023385849c0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0 // indirect
 	github.com/gsoultan/panmail-sdk v0.1.2 // indirect
 	github.com/gsoultan/storm v1.12.2 // indirect
