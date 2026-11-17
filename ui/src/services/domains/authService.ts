@@ -11,11 +11,21 @@ export const authService = {
         auth: false,
       });
 
-      return { user: data.user ?? null, token: data.token ?? null, err: null };
+      return {
+        user: data.user ?? null,
+        token: data.token ?? null,
+        // A correct password for an account that needs a code: no session
+        // yet, and the step still to take.
+        secondFactor: data.second_factor ?? null,
+        challenge: data.challenge ?? null,
+        err: null,
+      };
     } catch (error) {
       return {
         user: null,
         token: null,
+        secondFactor: null,
+        challenge: null,
         err: error instanceof Error ? error : new Error("Login failed"),
       };
     }

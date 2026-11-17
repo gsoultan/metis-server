@@ -151,6 +151,10 @@ export default defineConfig({
           // The Connect/protobuf runtime is only used once signed in.
           if (id.includes('@bufbuild') || id.includes('@connectrpc')) return 'vendor-rpc';
 
+          // The QR encoder is only used to set up an authenticator app, after a
+          // password: never on the first paint.
+          if (id.includes('node_modules/uqr')) return 'vendor-qr';
+
           // Date handling is used by the dates picker and a few views.
           if (id.includes('dayjs')) return 'vendor-dates';
 
