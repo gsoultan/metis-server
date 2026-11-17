@@ -5,6 +5,7 @@ go 1.27.4
 require (
 	github.com/google/uuid v1.6.0
 	github.com/gsoultan/metis v0.7.7-0.20261117134250-3b2fb8ed388e
+	github.com/jackc/pgx/v5 v5.13.0
 )
 
 require (
@@ -82,7 +83,6 @@ require (
 	github.com/in-toto/in-toto-golang v0.11.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.13.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
