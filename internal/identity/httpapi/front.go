@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -16,24 +17,31 @@ import (
 
 // Front sends the identity routes to metis-server's identity and everything
 // else on to next. The identity is built when the engine has opened its
-// database, a moment after the server starts listening; until then the
-// identity routes answer 503, as the engine's would while it starts.
+// database, a moment after the server starts listening, or after the setup
+// wizard has chosen one. A sign-in arriving in that moment waits for it, up to
+// readyWait, and then answers 503, as the engine's would while it starts.
 type Front struct {
 	next    http.Handler
 	routes  *Handler // only for Owns
 	handler atomic.Pointer[Handler]
+	ready   chan struct{}
+	once    sync.Once
 	me      Me
 	log     *slog.Logger
 }
 
+// readyWait is how long a sign-in waits for the identity to be built.
+const readyWait = 15 * time.Second
+
 // NewFront serves the identity routes once Ready is called, and next the rest.
 func NewFront(next http.Handler, me Me, log *slog.Logger) *Front {
-	return &Front{next: next, routes: New(nil, nil, log), me: me, log: log}
+	return &Front{next: next, routes: New(nil, nil, log), ready: make(chan struct{}), me: me, log: log}
 }
 
 // Ready starts serving the identity routes from id.
 func (f *Front) Ready(id *assemble.Identity) {
 	f.handler.Store(New(id, f.me, f.log))
+	f.once.Do(func() { close(f.ready) })
 }
 
 func (f *Front) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +50,16 @@ func (f *Front) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h := f.handler.Load()
+	if h == nil {
+		timer := time.NewTimer(readyWait)
+		select {
+		case <-f.ready:
+			h = f.handler.Load()
+		case <-timer.C:
+		case <-r.Context().Done():
+		}
+		timer.Stop()
+	}
 	if h == nil {
 		w.Header().Set("Retry-After", "2")
 		writeError(w, http.StatusServiceUnavailable, "the server is starting; try again in a moment")

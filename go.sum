@@ -218,6 +218,8 @@ github.com/gsoultan/metis v0.7.7-0.20261117134250-3b2fb8ed388e h1:PAWuJ1EKafndX2
 github.com/gsoultan/metis v0.7.7-0.20261117134250-3b2fb8ed388e/go.mod h1:OoCwYkbVRzkNVc1sD4EFpfV+c1/6Z9XHYKnvvYZRJyA=
 github.com/gsoultan/metis v0.7.7-0.20261117142558-33c681d63893 h1:4J84vfpkAzGX7vDYHqiWkfa14+scujB1p47V57qLsdU=
 github.com/gsoultan/metis v0.7.7-0.20261117142558-33c681d63893/go.mod h1:OoCwYkbVRzkNVc1sD4EFpfV+c1/6Z9XHYKnvvYZRJyA=
+github.com/gsoultan/metis v0.7.7-0.20261117143641-b2b224edc07d h1:bKyrNxSqlBKgV0HINFUzyTH1Uo0Wq1BHJaVkH9N5/hs=
+github.com/gsoultan/metis v0.7.7-0.20261117143641-b2b224edc07d/go.mod h1:OoCwYkbVRzkNVc1sD4EFpfV+c1/6Z9XHYKnvvYZRJyA=
 github.com/gsoultan/panmail-sdk v0.1.2 h1:LxGjqvKoXwcFrf0PFRLUs0AO+npj3R3soQR+4ndZRKU=
 github.com/gsoultan/panmail-sdk v0.1.2/go.mod h1:nyPtNdRsP3kg4Vlk+3LJ2r3fBzwj1cahRpHGlcNMEaQ=
 github.com/gsoultan/storm v1.12.2 h1:7FPuJIRgaQWTHFSY6mx5UUNc1U0Y+Rr8wV26j9VU5As=
