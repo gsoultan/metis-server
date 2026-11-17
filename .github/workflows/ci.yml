@@ -31,6 +31,14 @@ jobs:
           repository: gsoultan/metis
           path: .engine
 
+      # The SDK screen's Go snippets are checked against metis-sdk's source,
+      # so a snippet that would not compile fails here.
+      - name: Checkout metis-sdk
+        uses: actions/checkout@v7
+        with:
+          repository: gsoultan/metis-sdk
+          path: .sdk
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
@@ -65,6 +73,7 @@ jobs:
         working-directory: ui
         env:
           METIS_ENGINE_DIR: ${{ github.workspace }}/.engine
+          METIS_SDK_DIR: ${{ github.workspace }}/.sdk
 
       # `bun run build` runs the bundle budget as its final step, so a change
       # that pushes the first-paint payload past its ceiling fails here rather

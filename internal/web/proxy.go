@@ -40,7 +40,7 @@ func NewEngineProxy(target *url.URL) http.Handler {
 
 // engineUnavailableBody is engineUnavailable's answer, in the engine's error
 // shape.
-const engineUnavailableBody = `{"err":"The Metis engine could not be reached. Try again in a moment."}` + "\n"
+const engineUnavailableBody = `{"error":"The Metis engine could not be reached. Try again in a moment."}` + "\n"
 
 // engineUnavailable answers a request the engine could not be reached for, in
 // the engine's own error shape, so the UI shows it like any other failure.

@@ -53,7 +53,7 @@ export function snippetFor(language: SnippetLanguage, call: SdkCall, options: Sn
  */
 function goSnippet(call: SdkCall, { baseUrl }: SnippetOptions): string {
   const client = [
-    `client := metis.NewClient(${quote(baseUrl)}, metis.WithToken(os.Getenv("METIS_TOKEN")))`,
+    `client := metis.NewClient(${quote(sdkBaseUrl(baseUrl))}, metis.WithToken(os.Getenv("METIS_TOKEN")))`,
   ].join('\n');
 
   switch (call.kind) {
@@ -101,11 +101,12 @@ function goSnippet(call: SdkCall, { baseUrl }: SnippetOptions): string {
 
     case 'fail':
       return [
-        '// A returned error fails the task and spends one retry. When the',
-        '// retries run out it stays failed and raises an incident for an',
-        '// operator — it is not lost.',
+        '// A returned error fails the task and spends one of its retries',
+        '// (task.Retries), and the task waits RetryDelay before the next',
+        '// attempt. When the retries run out it stays failed and raises an',
+        '// incident for an operator — it is not lost.',
         `worker := metis.NewWorker(client, ${quote(call.topic)}, ${quote(call.workerId)},`,
-        `\tmetis.WorkerOptions{Retries: ${call.retries}, RetryTimeout: ${goDuration(call.retryTimeoutMs)}},`,
+        `\tmetis.WorkerOptions{RetryDelay: ${goDuration(call.retryTimeoutMs)}},`,
         '\tfunc(ctx context.Context, task *metis.ExternalTask) (metis.Variables, error) {',
         `\t\treturn nil, errors.New(${quote(call.errorMessage || 'the call failed')})`,
         '\t})',
@@ -127,6 +128,15 @@ function goSnippet(call: SdkCall, { baseUrl }: SnippetOptions): string {
         `\t${goVariables(call.variables, 1)})`,
       ].join('\n');
   }
+}
+
+/**
+ * The address the Go client takes: the site, without the /api/v1 the client
+ * adds itself. The other snippets print whole URLs and keep it; a Go client
+ * given it would call /api/v1/api/v1/… and get a 404 on every request.
+ */
+export function sdkBaseUrl(baseUrl: string): string {
+  return baseUrl.replace(/\/+$/, '').replace(/\/api\/v1$/, '');
 }
 
 /** `metis.Variables{…}`, or `nil` when there is nothing to send. */

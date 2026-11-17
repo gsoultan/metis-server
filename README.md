@@ -50,6 +50,27 @@ address in the engine's rate limiter and audit log.
 The engine does all authentication and authorization. metis-server only serves
 files and forwards requests; it holds no secrets and no database.
 
+### Programs and the Go SDK
+
+Programs use [`gsoultan/metis-sdk`](https://github.com/gsoultan/metis-sdk).
+Every call it makes is under `/api/v1`, so it works pointed at metis-server or
+at the engine directly, with the same token:
+
+```go
+client := metis.NewClient("https://metis.example.com", metis.WithToken(token)) // no /api/v1: the client adds it
+```
+
+Through metis-server, the engine's `METIS_TRUSTED_PROXIES` matters for
+programs too: without it a busy program shares one rate limit with every
+person using the web app. When the engine cannot be reached, metis-server
+answers 502 with the engine's error shape (`{"error": "…"}`), which the SDK
+reads as a server error worth retrying. Webhook deliveries come from the
+engine, and gRPC is served by the engine only.
+
+The web app's SDK page (`/sdk`) prints its Go snippets against metis-sdk; a
+test reads the SDK's source so that a snippet naming a call or field the SDK
+does not have fails the build.
+
 ## Developing the UI
 
 ```bash
@@ -71,8 +92,10 @@ make gate              # UI build, gofmt, vet, Go tests with -race, UI typecheck
 DATABASE_URL=postgres://metis:metis@127.0.0.1:5432/metis_e2e?sslmode=disable make e2e
 ```
 
-`make e2e` needs a checkout of `gsoultan/metis` next to this one, or
-`METIS_ENGINE_DIR` pointing at one. See [`e2e/README.md`](e2e/README.md).
+Some UI tests read the other repositories' source, so `make gate` needs
+checkouts next to this one: `gsoultan/metis` (`../metis`, or
+`METIS_ENGINE_DIR`) and `gsoultan/metis-sdk` (`../metis-sdk`, or
+`METIS_SDK_DIR`). `make e2e` needs the engine checkout too. See [`e2e/README.md`](e2e/README.md).
 
 ## History
 

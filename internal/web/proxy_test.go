@@ -108,7 +108,7 @@ func TestAnUnreachableEngineIsABadGatewayInTheEnginesShape(t *testing.T) {
 	if rec.Code != http.StatusBadGateway {
 		t.Fatalf("status %d, want 502", rec.Code)
 	}
-	if !strings.Contains(rec.Body.String(), `"err":`) {
+	if !strings.Contains(rec.Body.String(), `"error":`) {
 		t.Fatalf("body %q, want the engine's error shape", rec.Body.String())
 	}
 }

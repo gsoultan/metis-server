@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { engineRoot } from './engineSource.test';
-import { snippetFor, SNIPPET_LANGUAGES } from './sdkSnippets';
+import { engineRoot, sdkRoot } from './engineSource.test';
+import { sdkBaseUrl, snippetFor, SNIPPET_LANGUAGES } from './sdkSnippets';
 import type { SdkCall } from './sdkCalls';
 
 const options = { baseUrl: 'https://bpm.example.com/api/v1' };
@@ -45,7 +45,66 @@ describe('every language', () => {
   }
 });
 
+const EVERY_CALL: SdkCall[] = [
+  START,
+  { kind: 'fetchAndLock', topic: 'reverse-charge', workerId: 'sandbox-1', maxTasks: 1, lockDurationMs: 60_000 },
+  { kind: 'complete', taskId: 't1', workerId: 'sandbox-1', topic: 'reverse-charge', variables: { reversed: true } },
+  { kind: 'fail', taskId: 't1', workerId: 'sandbox-1', topic: 'reverse-charge', errorMessage: 'card declined', retries: 2, retryTimeoutMs: 10_000 },
+  { kind: 'message', projectId: 'proj-1', messageName: 'payment.received', correlationKey: 'order-4471', variables: {} },
+  { kind: 'signal', projectId: 'proj-1', signalName: 'quarter.closed', variables: {} },
+];
+
 describe('the Go snippet', () => {
+  it('gives the client the site, since the client adds /api/v1 itself', () => {
+    // Given https://…/api/v1 the client called /api/v1/api/v1/… and got a 404.
+    const snippet = snippetFor('go', START, options);
+    expect(snippet).toContain('metis.NewClient("https://bpm.example.com", ');
+    expect(snippet).not.toContain('/api/v1');
+  });
+
+  it('keeps a path the site itself lives under', () => {
+    expect(sdkBaseUrl('https://example.com/metis/api/v1')).toBe('https://example.com/metis');
+    expect(sdkBaseUrl('https://example.com/api/v1/')).toBe('https://example.com');
+    expect(sdkBaseUrl('https://example.com')).toBe('https://example.com');
+  });
+
+  /**
+   * A snippet that names a method or field metis-sdk does not have is one
+   * that does not compile, and nothing else here would notice: the button
+   * works and the printed code fails on the reader's machine. The fail
+   * snippet once set WorkerOptions{Retries, RetryTimeout}, neither of which
+   * exists. This reads the SDK's source rather than keep a list of its API.
+   */
+  it('uses only what metis-sdk declares', () => {
+    const root = sdkRoot();
+    const source = readdirSync(root)
+      .filter((name) => name.endsWith('.go') && !name.endsWith('_test.go'))
+      .map((name) => readFileSync(join(root, name), 'utf8'))
+      .join('\n');
+    const workerOptions = /type WorkerOptions struct \{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';
+    expect(workerOptions).not.toBe('');
+
+    const missing: string[] = [];
+    for (const call of EVERY_CALL) {
+      const snippet = snippetFor('go', call, options);
+      for (const [, name] of snippet.matchAll(/\bclient\.(\w+)\(/g)) {
+        if (!new RegExp(`^func \\(c \\*Client\\) ${name}\\(`, 'm').test(source)) missing.push(`Client.${name}`);
+      }
+      for (const [, name] of snippet.matchAll(/\bworker\.(\w+)\(/g)) {
+        if (!new RegExp(`^func \\(w \\*Worker\\) ${name}\\(`, 'm').test(source)) missing.push(`Worker.${name}`);
+      }
+      for (const [, name] of snippet.matchAll(/\bmetis\.(\w+)/g)) {
+        if (!new RegExp(`^(func|type|const|var) ${name}\\b|^\\t${name}\\s+=`, 'm').test(source)) missing.push(`metis.${name}`);
+      }
+      for (const [, fields] of snippet.matchAll(/metis\.WorkerOptions\{([^}]*)\}/g)) {
+        for (const [, field] of fields.matchAll(/(\w+):/g)) {
+          if (!new RegExp(`^\\t${field}\\s`, 'm').test(workerOptions)) missing.push(`WorkerOptions.${field}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
   it('reads the token from the environment rather than printing one', () => {
     expect(snippetFor('go', START, options)).toContain('os.Getenv("METIS_TOKEN")');
   });
