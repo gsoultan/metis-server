@@ -7,6 +7,7 @@ import { useChangeOwnPassword } from '../hooks/useUser';
 import { useAppStore } from '../store/useAppStore';
 import { notifications } from '@mantine/notifications';
 import { MIN_PASSWORD_LENGTH } from '../domain/password';
+import { NewPasswordInput } from './password/NewPasswordInput';
 import { errorMessage } from '../services/shared/errors';
 
 interface ChangePasswordModalProps {
@@ -108,11 +109,18 @@ export function ChangePasswordModal({ opened, onClose }: ChangePasswordModalProp
             }}
           >
             {(field) => (
-              <PasswordInput
+              <NewPasswordInput
                 {...fieldProps(field)}
                 label="New password"
                 placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
                 autoComplete="new-password"
+                subject="new password"
+                onGenerate={(password) => {
+                  // The confirmation is filled too: a generated password is
+                  // copied, not retyped, and the match check still runs.
+                  form.setFieldValue('confirmPassword', password);
+                  field.handleChange(password);
+                }}
               />
             )}
           </form.Field>
