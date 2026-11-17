@@ -21,6 +21,7 @@ type step struct {
 // steps are applied in order, each in its own transaction.
 var steps = []step{
 	{1, "integration API keys", integrationKeysDDL},
+	{2, "sessions", sessionsDDL},
 }
 
 // integrationKeysDDL is an organization's integration API keys. Deleting an
@@ -111,3 +112,20 @@ func apply(ctx context.Context, conn *sql.Conn, s step) (err error) {
 	}
 	return nil
 }
+
+// sessionsDDL is signed-in sessions, by the hash of their token. Deleting an
+// account deletes its sessions.
+const sessionsDDL = `
+SET LOCAL lock_timeout = '2s';
+CREATE TABLE identity_sessions (
+    id          uuid PRIMARY KEY,
+    user_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token_hash  char(64) NOT NULL,
+    with_code   boolean NOT NULL,
+    created_at  timestamptz NOT NULL,
+    expires_at  timestamptz NOT NULL,
+    revoked_at  timestamptz
+);
+CREATE UNIQUE INDEX ux_identity_sessions_token_hash ON identity_sessions (token_hash);
+CREATE INDEX ix_identity_sessions_user_id ON identity_sessions (user_id) WHERE revoked_at IS NULL;
+`

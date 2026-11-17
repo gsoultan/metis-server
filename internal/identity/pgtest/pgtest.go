@@ -1,6 +1,6 @@
 // Package pgtest opens a PostgreSQL database for a test, in a schema of its
-// own that is dropped when the test ends, with the engine's organizations
-// table standing in for the engine's.
+// own that is dropped when the test ends, with the engine's organizations and
+// users tables standing in for the engine's.
 //
 // It needs METIS_TEST_POSTGRES_DSN, and skips the test without it.
 package pgtest
@@ -50,7 +50,7 @@ func Open(t *testing.T) *sql.DB {
 	cfg.RuntimeParams["search_path"] = schema
 	db := stdlib.OpenDB(*cfg)
 	t.Cleanup(func() { _ = db.Close() })
-	if _, err := db.ExecContext(ctx, `CREATE TABLE organizations (id uuid PRIMARY KEY)`); err != nil {
+	if _, err := db.ExecContext(ctx, `CREATE TABLE organizations (id uuid PRIMARY KEY); CREATE TABLE users (id uuid PRIMARY KEY)`); err != nil {
 		t.Fatal(err)
 	}
 	return db
