@@ -2,9 +2,9 @@
 
 The always-on contract for any agent (or human) working in this repository. The
 engine's manual, [`gsoultan/metis` AGENTS.md](https://github.com/gsoultan/metis/blob/main/AGENTS.md),
-holds the full profile roster (`pm`, `po`, `bpm`, `dmn`, `arch`, `go`, `sec`,
-`perf`, `test`, `fe`, `ux`, `patterns`, `lead`); this file says how it applies
-here.
+holds the engine's profile roster (`pm`, `po`, `bpm`, `dmn`, `arch`, `go`, `sec`,
+`perf`, `test`, `patterns`, `lead`). The two web-app profiles, `fe` and `ux`, are
+in §2.1 below; this file says how all of them apply here.
 
 ## 0. What this repository is
 
@@ -31,7 +31,38 @@ Discover → Work → Verify → Persist, as in the engine's manual.
 - **Verify:** `make gate`. For a change to a page, also `make e2e`.
 - **Persist:** `rtk graphify update .`; README and these files follow the change.
 
-## 2. Driver routing
+## 2. Profiles and driver routing
+
+### 2.1 The web-app profiles
+
+Moved here from the engine's manual with the web app. Each has `Owns · Vetoes ·
+Proof`, as the engine's profiles do.
+
+#### `fe` — Frontend UI Engineer
+- **Owns:** React/TS correctness, routing, state, bundle size, build health.
+- **Vetoes:**
+  - `bun run build`, `tsc -b`, or `eslint .` failing or regressing.
+  - `any` added to a service/API boundary type.
+  - State derived into `useState` + `useEffect` where it could be derived during render.
+  - An unvirtualized list that can grow unbounded (task inbox, instance list, audit log).
+  - A component over ~300 lines carrying fetching, mapping and rendering at once.
+- **Proof:** Build + typecheck + lint output. Bundle delta for anything touching vendor chunks.
+
+#### `ux` — UI/UX & Low-Code Expert
+- **Owns:** The experience of a **non-technical business user** — the primary persona for the
+  inbox, designer and troubleshooter.
+- **Vetoes:**
+  - Technical vocabulary surfaced to end users (`Task_Approved`, node IDs, stack traces,
+    raw JSON) where a business narrative belongs.
+  - An error with no plain-English cause and no suggested fix.
+  - Advanced/expert settings shown by default instead of behind progressive disclosure.
+  - **Interactive UI with no accessible name** — every control needs a label; keyboard paths
+    must work. This is a procurement blocker for enterprise buyers, not a nicety.
+  - Hardcoded user-facing English where the product claims multi-region readiness.
+- **Proof:** A described click-path for a non-expert user. Keyboard + screen-reader check on
+  new interactive components.
+
+### 2.2 Driver routing
 
 | You are changing… | Driver | Mandatory Challenger(s) |
 | :-- | :-- | :-- |
@@ -51,7 +82,7 @@ Discover → Work → Verify → Persist, as in the engine's manual.
 | `internal/web/` | The handler: static files, security headers, the engine proxy |
 | `ui/` | The React app (Vite, Mantine, TanStack Router); `ui/embed.go` embeds `ui/dist` |
 | `e2e/` | Playwright suite, run against metis-server in front of a real engine |
-| `scripts/dev.sh` | Development: runs the engine checkout's `scripts/dev.sh` with this UI (admin / admin, development database only) |
+| `scripts/dev.sh` | Development: the engine through its checkout's `scripts/dev.sh backend` (admin / admin, development database only), and this UI's Vite server |
 | `scripts/e2e.sh` | Builds and starts both, seeds the engine, runs the suite |
 | `deploy/linux/`, `.goreleaser.yaml` | Linux packages: systemd/OpenRC service, env file, maintainer scripts; built on a tag by `.github/workflows/release.yml` |
 | `docs/` | UI coding guidelines (`guidelines.md`) and the UI/UX audits moved from the engine |
