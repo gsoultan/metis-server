@@ -1,9 +1,12 @@
-import { Alert, Button, Code, Group, JsonInput, Select, Stack, Text } from '@mantine/core';
+import { Alert, Button, Code, Group, JsonInput, Select, Stack, Text, TextInput } from '@mantine/core';
 import { Wand2 } from 'lucide-react';
 
 import type { NodeConfigProps } from '../PropertyPanel';
 import { asText } from '../../types/bpmn';
+import { defaultSchedule } from '../../domain/startSchedule';
+import { START_TRIGGERS, chooseStartTrigger, scheduleOf, startTriggerOf, type StartTrigger } from '../../domain/startTrigger';
 import { PropertySection } from './PropertySection';
+import { StartScheduleEditor } from './StartScheduleEditor';
 
 /** A starting point, so the field is never a blank box. */
 const EXAMPLE = JSON.stringify(
@@ -14,6 +17,10 @@ const EXAMPLE = JSON.stringify(
 
 /**
  * How a process begins, and what it begins with.
+ *
+ * How it begins is saved as the settings the engine reads: a message name, a
+ * signal name or a schedule (domain/startTrigger.ts). What is chosen here is
+ * what happens.
  *
  * The sample data is the useful part. A process is a sequence of steps reading
  * and writing one bag of variables, and until the bag has something in it the
@@ -27,21 +34,64 @@ const EXAMPLE = JSON.stringify(
 export function StartEventConfig({ data, onUpdate }: NodeConfigProps) {
   const sample = asText(data.sampleData);
   const invalid = sample.trim() !== '' && !isJSONObject(sample);
+  const trigger = startTriggerOf(data);
+  const schedule = scheduleOf(data);
 
   return (
     <Stack gap="xl">
-      <PropertySection title="How it starts" hint="What causes a new process to begin.">
+      <PropertySection title="How it starts" hint="What causes a new run of this process to begin.">
         <Select
           aria-label="How this process starts"
-          data={[
-            { value: 'manual', label: 'Someone starts it' },
-            { value: 'timer', label: 'On a schedule' },
-            { value: 'message', label: 'Another system sends a message' },
-          ]}
-          value={asText(data.startedBy, 'manual')}
-          onChange={(value) => onUpdate({ startedBy: value ?? 'manual' })}
+          data={START_TRIGGERS.map(({ value, label }) => ({ value, label }))}
+          value={trigger}
+          onChange={(value) => value && onUpdate(chooseStartTrigger(value as StartTrigger, data))}
           allowDeselect={false}
         />
+        <Text size="xs" c="dimmed">
+          {START_TRIGGERS.find((choice) => choice.value === trigger)?.blurb}
+        </Text>
+
+        {trigger === 'message' && (
+          <TextInput
+            label="Message name"
+            placeholder="e.g. order-placed"
+            description="The name the sender uses. A message sent to one waiting process by its key does not start a new one."
+            value={asText(data.messageName)}
+            onChange={(event) => onUpdate({ messageName: event.currentTarget.value })}
+            error={asText(data.messageName).trim() === '' ? 'Give the message a name, or nothing will start this process.' : undefined}
+          />
+        )}
+
+        {trigger === 'signal' && (
+          <TextInput
+            label="Signal name"
+            placeholder="e.g. day-closed"
+            value={asText(data.signalName)}
+            onChange={(event) => onUpdate({ signalName: event.currentTarget.value })}
+            error={asText(data.signalName).trim() === '' ? 'Give the signal a name, or nothing will start this process.' : undefined}
+          />
+        )}
+
+        {trigger === 'schedule' && schedule && (
+          <>
+            <StartScheduleEditor schedule={schedule} onChange={(next) => onUpdate({ start_schedule: next })} />
+            <Text size="xs" c="dimmed">
+              Only the live version runs on its schedule. A scheduled run starts with no data of its own.
+            </Text>
+          </>
+        )}
+
+        {trigger === 'schedule' && !schedule && (
+          <Alert variant="light" color="red" p="xs" title="The schedule cannot be read">
+            <Button
+              size="compact-xs"
+              variant="light"
+              onClick={() => onUpdate({ start_schedule: defaultSchedule() })}
+            >
+              Choose when it runs again
+            </Button>
+          </Alert>
+        )}
       </PropertySection>
 
       <PropertySection

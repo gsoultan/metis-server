@@ -320,6 +320,17 @@ describe('versionDiff beyond the steps themselves', () => {
     ).toBe('unchanged');
   });
 
+  it('says a start step\'s schedule the way the panel does', () => {
+    const start = (properties: Record<string, unknown>) =>
+      version(1, [node({ id: 'start', type: 'startEvent', properties })]);
+    const daily = { every: 'day', at: '09:00', time_zone: 'UTC' };
+    const change = diffVersions(start({ start_schedule: daily }), start({ start_schedule: { ...daily, every: 'weekday' } }))
+      .changes[0];
+    expect(change.differences).toEqual([
+      'runs on a schedule: Every day at 09:00 (UTC) → Every weekday at 09:00 (UTC)',
+    ]);
+  });
+
   it('never calls two versions that behave differently the same', () => {
     const rerouted = version(2, steps, paths.map((p) => (p.id === 'toApprove' ? { ...p, condition: 'amount < 100' } : p)));
     expect(diffSummary(diffVersions(base, rerouted))).toBe('1 path changed.');
