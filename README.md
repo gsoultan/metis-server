@@ -73,6 +73,29 @@ does not have fails the build.
 
 ## Developing the UI
 
+With a checkout of `gsoultan/metis` next to this one (`../metis`, or
+`METIS_ENGINE_DIR`):
+
+```bash
+make dev               # PostgreSQL, the engine and this UI; open http://localhost:5273
+make dev-reset         # the same, with an empty development database
+./scripts/dev.sh --sample   # set up and fill it with worked examples
+```
+
+Sign in as **`admin` / `admin`**. That account exists only in the development
+database the engine's `scripts/dev.sh` sets up: it runs the setup wizard with a
+long random password, then writes the hash of `admin` into that database. The
+engine refuses a password under eight characters everywhere else, and nothing
+here gives metis-server, its image or `docker compose` a default account; they
+start at the setup wizard. `--wizard` does the same in development. A database
+that is already set up keeps its own password: `make dev-reset` starts again.
+
+`scripts/dev.sh` runs the engine checkout's own `scripts/dev.sh` with this
+repository as its UI, so its arguments and settings (`UI_PORT`, `API_PORT`,
+`DATABASE_URL`, …) all apply; `./scripts/dev.sh --help` lists them.
+
+Against an engine that is already running:
+
 ```bash
 make dev-ui            # Vite on :5273, proxying /api to an engine on :8273
 ```

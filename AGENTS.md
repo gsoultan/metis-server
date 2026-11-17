@@ -51,6 +51,7 @@ Discover → Work → Verify → Persist, as in the engine's manual.
 | `internal/web/` | The handler: static files, security headers, the engine proxy |
 | `ui/` | The React app (Vite, Mantine, TanStack Router); `ui/embed.go` embeds `ui/dist` |
 | `e2e/` | Playwright suite, run against metis-server in front of a real engine |
+| `scripts/dev.sh` | Development: runs the engine checkout's `scripts/dev.sh` with this UI (admin / admin, development database only) |
 | `scripts/e2e.sh` | Builds and starts both, seeds the engine, runs the suite |
 | `docs/` | UI coding guidelines (`guidelines.md`) and the UI/UX audits moved from the engine |
 

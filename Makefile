@@ -27,6 +27,14 @@ ui-lint: ## Lint the UI
 ui-test: ## Run the UI tests
 	cd ui && bun test
 
+.PHONY: dev
+dev: ## PostgreSQL, the engine from ../metis and this UI on :5273; sign in as admin / admin (development only)
+	./scripts/dev.sh
+
+.PHONY: dev-reset
+dev-reset: ## As dev, starting again with an empty development database
+	./scripts/dev.sh --reset
+
 .PHONY: dev-ui
 dev-ui: ## Run the Vite dev server against an engine on :8273 (METIS_BACKEND overrides)
 	cd ui && bun run dev
