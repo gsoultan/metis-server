@@ -286,3 +286,28 @@ func TestRemovingAnAppMeansSettingOneUpAgain(t *testing.T) {
 		t.Fatalf("%+v, %v; want the enrol step", res, err)
 	}
 }
+
+func TestNewRecoveryCodesNeedTheAppsCodeAndReplaceTheOld(t *testing.T) {
+	r := newRig(t, Required)
+	ctx := context.Background()
+	if _, err := r.svc.RegenerateRecoveryCodes(ctx, userID, "123456"); !errors.Is(err, ErrNoApp) {
+		t.Fatalf("without an app: err = %v", err)
+	}
+	secret, old := r.enrol(t)
+	if _, err := r.svc.RegenerateRecoveryCodes(ctx, userID, old[0]); !errors.Is(err, ErrBadCode) {
+		t.Fatalf("a recovery code: err = %v", err)
+	}
+	r.now = r.now.Add(totp.StepSeconds * time.Second)
+	codes, err := r.svc.RegenerateRecoveryCodes(ctx, userID, r.codeAt(t, secret))
+	if err != nil || len(codes) != recoveryCodeCount {
+		t.Fatalf("%v, %v", codes, err)
+	}
+	status, err := r.svc.SecondFactorStatus(ctx, userID)
+	if err != nil || !status.Enrolled || !status.Required || status.RecoveryCodesLeft != recoveryCodeCount {
+		t.Fatalf("status = %+v, %v", status, err)
+	}
+	res, _ := r.svc.SignIn(ctx, "ada", password)
+	if _, err := r.svc.SignInWithCode(ctx, res.Challenge, old[1]); !errors.Is(err, ErrBadCode) {
+		t.Fatalf("an old recovery code: err = %v", err)
+	}
+}

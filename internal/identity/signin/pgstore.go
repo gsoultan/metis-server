@@ -117,6 +117,19 @@ func (s *PGStore) UseRecoveryCode(ctx context.Context, userID, hash string) (boo
 	return n == 1, err
 }
 
+// ReplaceRecoveryCodes implements Store.
+func (s *PGStore) ReplaceRecoveryCodes(ctx context.Context, userID string, hashes []string) error {
+	codes, err := json.Marshal(hashes)
+	if err != nil {
+		return fmt.Errorf("could not encode the recovery codes: %w", err)
+	}
+	if _, err := s.db.ExecContext(ctx, `UPDATE identity_second_factors SET recovery_codes = $2, updated_at = now()
+    WHERE user_id = $1 AND confirmed_at IS NOT NULL`, userID, codes); err != nil {
+		return fmt.Errorf("replace recovery codes: %w", err)
+	}
+	return nil
+}
+
 // RemoveFactor implements Store.
 func (s *PGStore) RemoveFactor(ctx context.Context, userID string) error {
 	if _, err := s.db.ExecContext(ctx, `DELETE FROM identity_second_factors WHERE user_id = $1`, userID); err != nil {

@@ -50,6 +50,8 @@ type Store interface {
 	// UseRecoveryCode removes a recovery code's hash. It returns false when
 	// the account has no such code left.
 	UseRecoveryCode(ctx context.Context, userID, hash string) (bool, error)
+	// ReplaceRecoveryCodes keeps new recovery codes' hashes in place of the old.
+	ReplaceRecoveryCodes(ctx context.Context, userID string, hashes []string) error
 	// RemoveFactor removes the account's app and recovery codes.
 	RemoveFactor(ctx context.Context, userID string) error
 

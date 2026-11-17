@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/gsoultan/metis-server/internal/identity"
 )
 
 // MinPasswordLength is the shortest password kept. The engine asks more of a
@@ -79,4 +81,68 @@ func (s *Service) RemoveSecondFactor(ctx context.Context, userID string) error {
 	}
 	s.log.Info("An authenticator app was removed.", "user_id", userID)
 	return s.sessions.SignOutEverywhere(ctx, userID)
+}
+
+// Status is whether an account signs in with an app, as its owner sees it.
+type Status struct {
+	Enrolled          bool `json:"enrolled"`
+	RecoveryCodesLeft int  `json:"recovery_codes_left"`
+	Required          bool `json:"required"`
+}
+
+// ErrNoApp is an account without a confirmed app asking for app-only things.
+var ErrNoApp = errors.New("this account has no authenticator app")
+
+// SecondFactorStatus is the signed-in account's app, as it sees it.
+func (s *Service) SecondFactorStatus(ctx context.Context, userID string) (Status, error) {
+	status := Status{Required: s.policy == Required}
+	factor, err := s.store.Factor(ctx, userID)
+	if errors.Is(err, ErrNotFound) {
+		return status, nil
+	}
+	if err != nil {
+		return Status{}, err
+	}
+	status.Enrolled = factor.Confirmed
+	if factor.Confirmed {
+		status.RecoveryCodesLeft = len(factor.RecoveryHashes)
+	}
+	return status, nil
+}
+
+// RegenerateRecoveryCodes replaces the signed-in account's recovery codes,
+// given a code from its app. Not a recovery code: somebody holding a stolen
+// session and one stolen recovery code must not be able to mint more.
+func (s *Service) RegenerateRecoveryCodes(ctx context.Context, userID, code string) ([]string, error) {
+	if looksLikeRecoveryCode(code) {
+		return nil, ErrBadCode
+	}
+	factor, err := s.store.Factor(ctx, userID)
+	if errors.Is(err, ErrNotFound) || (err == nil && !factor.Confirmed) {
+		return nil, ErrNoApp
+	}
+	if err != nil {
+		return nil, err
+	}
+	ok, _, err := s.spendCode(ctx, userID, code)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrBadCode
+	}
+	codes, hashes, err := newRecoveryCodes()
+	if err != nil {
+		return nil, err
+	}
+	if err := s.store.ReplaceRecoveryCodes(ctx, userID, hashes); err != nil {
+		return nil, err
+	}
+	s.log.Info("Recovery codes were replaced.", "user_id", userID)
+	return codes, nil
+}
+
+// Account is an engine account by id.
+func (s *Service) Account(ctx context.Context, userID string) (identity.Account, bool, error) {
+	return s.accounts.ByID(ctx, userID)
 }
