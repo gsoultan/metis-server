@@ -32,7 +32,7 @@ func (s *PGStore) PasswordHash(ctx context.Context, userID string) (string, erro
 	return hash, nil
 }
 
-// SetPasswordHash keeps an account's password, for setup and password changes.
+// SetPasswordHash implements Store.
 func (s *PGStore) SetPasswordHash(ctx context.Context, userID, hash string) error {
 	if _, err := s.db.ExecContext(ctx, `INSERT INTO identity_credentials (user_id, password_hash) VALUES ($1, $2)
     ON CONFLICT (user_id) DO UPDATE SET password_hash = EXCLUDED.password_hash, updated_at = now()`, userID, hash); err != nil {

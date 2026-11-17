@@ -32,6 +32,8 @@ type Challenge struct {
 type Store interface {
 	// PasswordHash returns the account's bcrypt hash, or ErrNotFound.
 	PasswordHash(ctx context.Context, userID string) (string, error)
+	// SetPasswordHash keeps an account's password, replacing any.
+	SetPasswordHash(ctx context.Context, userID, hash string) error
 	// Factor returns the account's app, or ErrNotFound.
 	Factor(ctx context.Context, userID string) (Factor, error)
 	// BeginFactor keeps a new secret not yet confirmed, replacing one not yet

@@ -232,3 +232,57 @@ func TestAnAppSetUpInTheEngineKeepsWorking(t *testing.T) {
 		t.Fatalf("the engine's recovery code: %v", err)
 	}
 }
+
+func TestSettingAPasswordEndsTheOldOnesSessions(t *testing.T) {
+	r := newRig(t, Optional)
+	ctx := context.Background()
+	res, err := r.svc.SignIn(ctx, "ada", password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.svc.SetPassword(ctx, userID, "short"); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("a short password: err = %v", err)
+	}
+	if err := r.svc.SetPassword(ctx, userID, "a new password entirely"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.sessions.Verify(ctx, res.Token); !errors.Is(err, identity.ErrNotRecognised) {
+		t.Fatalf("the old session: err = %v", err)
+	}
+	if _, err := r.svc.SignIn(ctx, "ada", password); !errors.Is(err, ErrBadCredentials) {
+		t.Fatalf("the old password: err = %v", err)
+	}
+	if _, err := r.svc.SignIn(ctx, "ada", "a new password entirely"); err != nil {
+		t.Fatalf("the new password: %v", err)
+	}
+}
+
+func TestChangingYourOwnPasswordNeedsTheCurrentOne(t *testing.T) {
+	r := newRig(t, Optional)
+	ctx := context.Background()
+	if err := r.svc.ChangeOwnPassword(ctx, userID, "a guess", "a new password entirely"); !errors.Is(err, ErrBadCredentials) {
+		t.Fatalf("wrong current password: err = %v", err)
+	}
+	if err := r.svc.ChangeOwnPassword(ctx, userID, password, password); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("the same password: err = %v", err)
+	}
+	if err := r.svc.ChangeOwnPassword(ctx, userID, password, "a new password entirely"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.SignIn(ctx, "ada", "a new password entirely"); err != nil {
+		t.Fatalf("the new password: %v", err)
+	}
+}
+
+func TestRemovingAnAppMeansSettingOneUpAgain(t *testing.T) {
+	r := newRig(t, Required)
+	ctx := context.Background()
+	r.enrol(t)
+	if err := r.svc.RemoveSecondFactor(ctx, userID); err != nil {
+		t.Fatal(err)
+	}
+	res, err := r.svc.SignIn(ctx, "ada", password)
+	if err != nil || res.Next != StepEnrol {
+		t.Fatalf("%+v, %v; want the enrol step", res, err)
+	}
+}
