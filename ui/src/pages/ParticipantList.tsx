@@ -5,7 +5,6 @@ import {
   Card,
   CopyButton,
   Modal,
-  PasswordInput,
   Group,
   Stack,
   Table,
@@ -18,6 +17,7 @@ import { KeyRound, Search, Trash2, Upload, UserCheck, UserCircle, UserX, Users }
 import { useState, useTransition } from 'react';
 
 import { PageHeader } from '../components/PageHeader';
+import { NewPasswordInput } from '../components/password/NewPasswordInput';
 import { ParticipantActivation } from '../components/ParticipantActivation';
 import { DeviceCount } from '../components/DeviceCount';
 import { ParticipantDevices } from '../components/ParticipantDevices';
@@ -33,6 +33,7 @@ import {
   type Participant,
 } from '../domain/participantImport';
 import { hasRole } from '../domain/access';
+import { MIN_PASSWORD_LENGTH } from '../domain/password';
 import { PRIVILEGED_ROLE } from '../domain/roles';
 import { matchesQuery } from '../domain/textSearch';
 import { useAppStore } from '../store/useAppStore';
@@ -346,11 +347,13 @@ export function ParticipantList() {
                 ? `${passwordPerson.display_name || passwordPerson.username} signs in to their tasks with this password.`
                 : 'They sign in to their tasks with this password.'}
             </Text>
-            <PasswordInput
+            <NewPasswordInput
               label="New password"
-              description="At least 8 characters. Any session they had ends."
+              description={`At least ${MIN_PASSWORD_LENGTH} characters. Any session they had ends.`}
+              subject="their password"
               value={newPassword}
               onChange={(event) => setNewPassword(event.currentTarget.value)}
+              onGenerate={setNewPassword}
               autoComplete="new-password"
               data-autofocus
             />

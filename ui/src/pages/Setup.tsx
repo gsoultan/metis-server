@@ -43,7 +43,8 @@ import {
 } from 'lucide-react';
 import { processService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
-import { MIN_PASSWORD_LENGTH } from '../domain/password';
+import { MIN_PASSWORD_LENGTH, randomString } from '../domain/password';
+import { NewPasswordInput } from '../components/password/NewPasswordInput';
 import { firstSetupStep, listenAddressError, publicURLError, SETUP_STEPS, setupRequestFor } from '../domain/setupWizard';
 import { setupService } from '../services/domains/setupService';
 import { errorMessage } from '../services/shared/errors';
@@ -62,16 +63,9 @@ const POSTGRES_PORT = 5432;
 
 const MIN_ENCRYPTION_KEY_LENGTH = 16;
 const GENERATED_KEY_LENGTH = 32;
-const GENERATED_PASSWORD_LENGTH = 16;
 
 const CRYPTO_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+';
 const ALPHANUM_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-function generateSecureRandom(length: number, charset: string): string {
-  const array = new Uint32Array(length);
-  crypto.getRandomValues(array);
-  return Array.from(array, (v) => charset[v % charset.length]).join('');
-}
 
 function getPasswordStrength(password: string): number {
   if (password.length === 0) return 0;
@@ -214,18 +208,13 @@ export function Setup({ onComplete }: { onComplete: () => void }) {
   }, [form]);
 
   const generateEncryptionKey = useCallback(() => {
-    const key = generateSecureRandom(GENERATED_KEY_LENGTH, ALPHANUM_CHARSET);
+    const key = randomString(GENERATED_KEY_LENGTH, ALPHANUM_CHARSET);
     form.setFieldValue('encryption_key', key);
   }, [form]);
 
   const generateJWTSecret = useCallback(() => {
-    const secret = generateSecureRandom(GENERATED_KEY_LENGTH, CRYPTO_CHARSET);
+    const secret = randomString(GENERATED_KEY_LENGTH, CRYPTO_CHARSET);
     form.setFieldValue('jwt_secret', secret);
-  }, [form]);
-
-  const generatePassword = useCallback(() => {
-    const password = generateSecureRandom(GENERATED_PASSWORD_LENGTH, CRYPTO_CHARSET);
-    form.setFieldValue('admin_password', password);
   }, [form]);
 
   const handleTestConnection = useCallback(async () => {
@@ -582,41 +571,16 @@ export function Setup({ onComplete }: { onComplete: () => void }) {
                     {...form.getInputProps('admin_email')}
                   />
                   <div>
-                    <Group align="flex-end" gap="xs">
-                      <PasswordInput
-                        label="Admin Password"
-                        placeholder="Choose a strong password"
-                        required
-                        style={{ flex: 1 }}
-                        {...form.getInputProps('admin_password')}
-                      />
-                      <Tooltip label="Generate secure password">
-                        <ActionIcon aria-label="Generate administrator password"
-                          variant="light"
-                          color="blue"
-                          size="lg"
-                          mb={form.errors.admin_password ? 22 : 0}
-                          onClick={generatePassword}
-                        >
-                          <RefreshCw size={18} />
-                        </ActionIcon>
-                      </Tooltip>
-                      <CopyButton value={form.values.admin_password} timeout={2000}>
-                        {({ copied, copy }) => (
-                          <Tooltip label={copied ? 'Copied' : 'Copy to clipboard'}>
-                            <ActionIcon aria-label="Copy administrator password"
-                              variant="light"
-                              color={copied ? 'green' : 'gray'}
-                              size="lg"
-                              mb={form.errors.admin_password ? 22 : 0}
-                              onClick={copy}
-                            >
-                              {copied ? <Check size={18} /> : <Copy size={18} />}
-                            </ActionIcon>
-                          </Tooltip>
-                        )}
-                      </CopyButton>
-                    </Group>
+                    <NewPasswordInput
+                      label="Admin Password"
+                      description={`At least ${MIN_PASSWORD_LENGTH} characters. Generate one, then copy it somewhere safe.`}
+                      placeholder="Choose a strong password"
+                      required
+                      subject="administrator password"
+                      {...form.getInputProps('admin_password')}
+                      value={form.values.admin_password}
+                      onGenerate={(password) => form.setFieldValue('admin_password', password)}
+                    />
                     {form.values.admin_password.length > 0 && (
                       <Stack gap={4} mt="xs">
                         <Progress

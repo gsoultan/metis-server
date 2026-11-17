@@ -1,9 +1,10 @@
-import { Button, Group, Modal, MultiSelect, PasswordInput, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Group, Modal, MultiSelect, Stack, Text, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { accountCreation, accountEdit, accountForm, type AccountFormValues } from '../../domain/accountSave';
 import { MIN_PASSWORD_LENGTH } from '../../domain/password';
+import { NewPasswordInput } from '../password/NewPasswordInput';
 import { ROLE_OPTIONS } from '../../domain/roles';
 import { useCreateUser, useResetPassword, useSetOrganizationRoles, useUpdateUser } from '../../hooks/useUser';
 import { useViewerAccess } from '../../hooks/useViewerAccess';
@@ -102,7 +103,7 @@ export function AccountDialog({ opened, onClose, account, organization }: Accoun
           disabled={!!account}
         />
         {showsPassword && (
-          <PasswordInput
+          <NewPasswordInput
             label={account ? 'New password' : 'Password'}
             description={
               account
@@ -114,6 +115,7 @@ export function AccountDialog({ opened, onClose, account, organization }: Accoun
             autoComplete="new-password"
             value={form.password}
             onChange={(e) => set('password', e.currentTarget.value)}
+            onGenerate={(password) => set('password', password)}
             error={passwordTooShort ? `Needs at least ${MIN_PASSWORD_LENGTH} characters` : undefined}
           />
         )}
