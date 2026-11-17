@@ -274,3 +274,115 @@ jobs:
             e2e/playwright-report
             e2e/test-results
           retention-days: 14
+
+  packages:
+    name: Linux packages (build, install, boot)
+    runs-on: ubuntu-latest
+
+    # The deb, rpm, apk and Arch packages are built only on a tag, so a broken
+    # nfpms block, a unit that no longer starts, or a maintainer script that
+    # fails on one distribution would otherwise be found on release day by
+    # whoever installed it. As in the engine's CI, this builds them from the
+    # same .goreleaser.yaml the release uses, installs each on its own
+    # distribution, and boots the deb under the runner's real systemd with the
+    # unit's hardening in force.
+    #
+    # The UI is built by the release's own before hook rather than taken from
+    # the ui job, so the step a tag depends on is the step this proves.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # GoReleaser works out the snapshot version from the last tag.
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      # The bundle budget at the end of `bun run build` was measured with
+      # node's zlib; see the ui job.
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Check the release config
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          args: check
+
+      # Both architectures, as the release builds them; only the amd64 ones
+      # can be installed on this runner. sbom and sign are skipped: syft is
+      # not installed here, and the keyless signature needs the release
+      # workflow's OIDC identity, which a pull request does not have.
+      - name: Build the packages
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          args: release --snapshot --clean --skip=sbom,sign
+
+      - name: Install on Debian, Rocky, Alpine and Arch
+        run: |
+          set -euo pipefail
+          # The same assertions on every distribution: the account exists, and
+          # the settings ended with the owners and modes the package sets.
+          cat > "$RUNNER_TEMP/check.sh" <<'SH'
+          set -eu
+          id metis-server
+          test "$(stat -c %U:%G:%a /etc/metis-server)" = root:metis-server:750
+          test "$(stat -c %U:%G:%a /etc/metis-server/metis-server.env)" = root:metis-server:640
+          test -x /usr/bin/metis-server
+          SH
+          run() { docker run --rm -v "$PWD/dist:/d" -v "$RUNNER_TEMP/check.sh:/check.sh:ro" "$1" sh -euc "$2"; }
+          run debian:12 \
+            "apt-get install -y /d/*_amd64.deb; sh /check.sh; test -f /usr/lib/systemd/system/metis-server.service; apt-get purge -y metis-server"
+          run rockylinux/rockylinux:9 \
+            "rpm -i /d/*.x86_64.rpm; sh /check.sh; test -f /usr/lib/systemd/system/metis-server.service; rpm -e metis-server"
+          run alpine:3.22 \
+            "apk add --allow-untrusted /d/*_x86_64.apk; sh /check.sh; test -x /etc/init.d/metis-server; apk del metis-server"
+          run archlinux:latest \
+            "pacman -U --noconfirm /d/*-x86_64.pkg.tar.zst; sh /check.sh; test -f /usr/lib/systemd/system/metis-server.service; pacman -R --noconfirm metis-server"
+
+      # No engine runs here, on purpose: /server/healthz must not follow the
+      # engine's health, the app must still be served, and the forwarded API
+      # must answer 502 rather than hang. That is metis-server's contract
+      # (AGENTS.md section 0), checked on the installed service.
+      - name: Boot the deb under systemd
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y ./dist/*_amd64.deb
+          sudo systemd-analyze verify metis-server.service
+          sudo systemctl start metis-server
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null localhost:8080/server/healthz 2>/dev/null; then
+              echo "ready after ${i}s"
+              # The real app, not the 503 placeholder a build without the UI
+              # serves.
+              curl -fsS localhost:8080/ | grep -q '<title>Metis BPM</title>'
+              code="$(curl -sS -o /dev/null -w '%{http_code}' localhost:8080/api/v1/setup/status)"
+              test "$code" = 502 || { echo "::error::/api with no engine answered $code, not 502"; exit 1; }
+              exit 0
+            fi
+            if systemctl is-failed --quiet metis-server; then
+              echo "::error::The service failed instead of serving. Its log:"
+              sudo journalctl -u metis-server --no-pager | tail -100
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::error::/server/healthz never answered within 30s. The service log:"
+          sudo journalctl -u metis-server --no-pager | tail -100
+          exit 1
+
+      - name: Stop and remove it
+        if: always()
+        run: |
+          sudo journalctl -u metis-server --no-pager | tail -30 || true
+          sudo apt-get purge -y metis-server || true

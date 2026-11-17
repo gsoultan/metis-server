@@ -1,0 +1,93 @@
+# What a tag publishes: metis-server's Linux archives and packages.
+#
+# Modelled on the engine's release workflow (gsoultan/metis), whose `binaries`
+# job this mirrors. GoReleaser builds the UI first (the before hook in
+# .goreleaser.yaml), then the binaries, archives and deb, rpm, apk and Arch
+# packages, and publishes them to the GitHub Release with a signed
+# checksums.txt, a bill of materials per archive, and build provenance.
+#
+# There is no image job here. Publishing metis-server's container image is a
+# separate decision; the Dockerfile builds one locally.
+#
+# Deliberately tag-triggered and nothing else, as the engine's is.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  binaries:
+    name: Publish the archives and packages
+    runs-on: ubuntu-latest
+
+    permissions:
+      # GoReleaser creates the GitHub Release and uploads to it.
+      contents: write
+      # Keyless signing and the provenance attestation exchange this
+      # workflow's OIDC identity for a short-lived certificate, so there is no
+      # long-lived key to store or to leak.
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # GoReleaser needs the tags for the version, and the commits since
+          # the last tag for the changelog.
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      # The before hook builds ui/ with bun; `bun run build` ends in the
+      # bundle budget, which was measured with node's zlib.
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      # GoReleaser shells out to syft for the per-archive bill of materials.
+      - name: Install syft
+        uses: anchore/sbom-action/download-syft@v0
+
+      # And to cosign, keyless, to sign checksums.txt.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Build and publish
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attest the archives and packages
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.deb
+            dist/*.rpm
+            dist/*.apk
+            dist/*.pkg.tar.zst
+            dist/checksums.txt
+
+      - name: Verify the signature the release notes tell people to check
+        run: |
+          cosign verify-blob dist/checksums.txt \
+            --bundle dist/checksums.txt.sigstore.json \
+            --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@${GITHUB_REF}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com

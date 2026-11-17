@@ -1,0 +1,32 @@
+#!/sbin/openrc-run
+# OpenRC service for the metis-server apk package (Alpine has no systemd).
+#
+# Like the systemd unit, the package installs this without adding it to a
+# runlevel. Check METIS_ENGINE_URL in /etc/metis-server/metis-server.env,
+# then:
+#
+#   rc-update add metis-server default && rc-service metis-server start
+
+name="metis-server"
+description="Metis web app (in front of a metis engine)"
+command="/usr/bin/metis-server"
+command_user="metis-server:metis-server"
+supervisor="supervise-daemon"
+respawn_delay=5
+output_log="/var/log/metis-server/metis-server.log"
+error_log="/var/log/metis-server/metis-server.log"
+umask=027
+
+depend() {
+	need net
+	after metis
+}
+
+start_pre() {
+	checkpath -d -m 0750 -o metis-server:metis-server /var/log/metis-server
+	if [ -f /etc/metis-server/metis-server.env ]; then
+		set -a
+		. /etc/metis-server/metis-server.env
+		set +a
+	fi
+}

@@ -38,7 +38,7 @@ Discover → Work → Verify → Persist, as in the engine's manual.
 | `ui/src/pages/**`, `components/**`, `hooks/**` | `fe` | `ux`, `perf` |
 | Designer, Task Inbox, Troubleshooter, forms | `ux` | `fe`, `bpm` |
 | `internal/web/**` (proxy, static files, headers) | `sec` | `arch`, `perf` |
-| `cmd/**`, `internal/config/**`, Dockerfile, compose | `arch` | `sec` |
+| `cmd/**`, `internal/config/**`, Dockerfile, compose, `deploy/**`, `.goreleaser.yaml` | `arch` | `sec` |
 | `e2e/**`, CI workflows, tooling | `test` | `lead` |
 | README, this file, `docs/**` | `pm` | `lead` |
 
@@ -52,6 +52,7 @@ Discover → Work → Verify → Persist, as in the engine's manual.
 | `ui/` | The React app (Vite, Mantine, TanStack Router); `ui/embed.go` embeds `ui/dist` |
 | `e2e/` | Playwright suite, run against metis-server in front of a real engine |
 | `scripts/e2e.sh` | Builds and starts both, seeds the engine, runs the suite |
+| `deploy/linux/`, `.goreleaser.yaml` | Linux packages: systemd/OpenRC service, env file, maintainer scripts; built on a tag by `.github/workflows/release.yml` |
 | `docs/` | UI coding guidelines (`guidelines.md`) and the UI/UX audits moved from the engine |
 
 ## 4. Verification gate
