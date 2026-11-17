@@ -36,6 +36,18 @@ esac
 [[ -x "$ENGINE_DIR/scripts/dev.sh" ]] \
   || die "no metis engine checkout at $ENGINE_DIR: clone gsoultan/metis there, or set METIS_ENGINE_DIR"
 
+# Compile the engine first, unless only the UI is asked for. The engine's script
+# starts it with `go run` and, alongside, a setup step that waits 60 seconds for
+# it to answer. On a machine's first run `go run` compiles every dependency,
+# which takes minutes, so the setup step gave up and the database stayed at the
+# setup wizard: admin / admin did not sign in. With the build cache warm from
+# here, `go run` (or air) only links.
+if [[ " $* " != *" ui "* && " $* " != *" front "* && " $* " != *" frontend "* \
+      && " $* " != *" -h "* && " $* " != *" --help "* ]]; then
+  printf '==> Compiling the engine (minutes on the first run, seconds after)\n'
+  (cd "$ENGINE_DIR" && go build -o /dev/null ./cmd/metis) || die "the engine in $ENGINE_DIR does not compile"
+fi
+
 # The engine's script runs the UI from METIS_SERVER_DIR; this checkout, always,
 # so a second clone of metis-server elsewhere is never the one that starts.
 export METIS_SERVER_DIR="$ROOT"
