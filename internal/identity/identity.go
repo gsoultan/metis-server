@@ -11,26 +11,18 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+
+	"github.com/gsoultan/metis/engine"
 )
 
 // Principal is who a request acts as, as the engine is told.
-type Principal struct {
-	// UserID is the account's id, or the key's id when ViaKey is set.
-	UserID string
-	// Roles is the roles held in each organization, by organization id.
-	Roles map[string][]string
-	// ViaKey is set when the request carries an integration API key, which
-	// the engine refuses on the routes that change who may do what.
-	ViaKey bool
-}
+type Principal = engine.Principal
 
-// Identity names the caller of a request. It returns false with a nil error
-// when the request names nobody, and an error only when it could not tell,
-// such as when the store holding keys is down, so the request is refused
-// rather than treated as anonymous.
-type Identity interface {
-	Authenticate(ctx context.Context, r *http.Request) (Principal, bool, error)
-}
+// Identity is what the engine takes from metis-server: it names the caller of
+// a request, returning false with a nil error when the request names nobody
+// and an error only when it could not tell, so the request is refused rather
+// than treated as anonymous; and it keeps passwords and authenticator apps.
+type Identity = engine.Identity
 
 // Bearer is one way of proving who a token belongs to.
 type Bearer interface {

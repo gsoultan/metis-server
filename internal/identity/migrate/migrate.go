@@ -163,7 +163,8 @@ CREATE TABLE identity_challenges (
 CREATE INDEX ix_identity_challenges_expires_at ON identity_challenges (expires_at);
 
 INSERT INTO identity_credentials (user_id, password_hash)
-SELECT id, password_hash FROM users WHERE COALESCE(password_hash, '') <> '';
+SELECT id, password_hash FROM users
+WHERE COALESCE(password_hash, '') <> '' AND password_hash NOT LIKE '!%';
 
 DO $$ BEGIN
 IF to_regclass('user_second_factors') IS NOT NULL THEN

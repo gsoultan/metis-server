@@ -51,6 +51,8 @@ func New(ctx context.Context, env identity.Env, getenv func(string) string, log 
 	}, nil
 }
 
+var _ identity.Identity = (*Identity)(nil)
+
 // Authenticate names the caller of a request.
 func (i *Identity) Authenticate(ctx context.Context, r *http.Request) (identity.Principal, bool, error) {
 	return i.auth.Authenticate(ctx, r)
