@@ -113,9 +113,10 @@ here gives metis-server, its image or `docker compose` a default account; they
 start at the setup wizard. `--wizard` does the same in development. A database
 that is already set up keeps its own password: `make dev-reset` starts again.
 
-`scripts/dev.sh` runs the engine checkout's own `scripts/dev.sh` with this
-repository as its UI, so its arguments and settings (`UI_PORT`, `API_PORT`,
-`DATABASE_URL`, …) all apply; `./scripts/dev.sh --help` lists them.
+`scripts/dev.sh` starts the engine and its database through the engine
+checkout's own `scripts/dev.sh backend` (so `--reset`, `--sample`, `--wizard`,
+`API_PORT`, `GRPC_PORT` and `DATABASE_URL` apply), and the Vite dev server from
+this repository on `UI_PORT`. `./scripts/dev.sh --help` lists them.
 
 Against an engine that is already running:
 
