@@ -50,7 +50,7 @@ func Open(t *testing.T) *sql.DB {
 	cfg.RuntimeParams["search_path"] = schema
 	db := stdlib.OpenDB(*cfg)
 	t.Cleanup(func() { _ = db.Close() })
-	if _, err := db.ExecContext(ctx, `CREATE TABLE organizations (id uuid PRIMARY KEY); CREATE TABLE users (id uuid PRIMARY KEY)`); err != nil {
+	if _, err := db.ExecContext(ctx, `CREATE TABLE organizations (id uuid PRIMARY KEY); CREATE TABLE users (id uuid PRIMARY KEY, password_hash text)`); err != nil {
 		t.Fatal(err)
 	}
 	return db

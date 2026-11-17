@@ -22,6 +22,7 @@ type step struct {
 var steps = []step{
 	{1, "integration API keys", integrationKeysDDL},
 	{2, "sessions", sessionsDDL},
+	{3, "passwords and authenticator apps", credentialsDDL},
 }
 
 // integrationKeysDDL is an organization's integration API keys. Deleting an
@@ -128,4 +129,46 @@ CREATE TABLE identity_sessions (
 );
 CREATE UNIQUE INDEX ux_identity_sessions_token_hash ON identity_sessions (token_hash);
 CREATE INDEX ix_identity_sessions_user_id ON identity_sessions (user_id) WHERE revoked_at IS NULL;
+`
+
+// credentialsDDL is staff passwords, authenticator apps and the challenges
+// between a password and its code, all in metis-server's own tables.
+//
+// The passwords and apps already in the engine are copied once, as this step
+// runs. The engine's columns are left as they are, so a rollback to an engine
+// that signs people in itself still finds them. A secret is copied sealed as
+// the engine sealed it, and opened with the engine's key.
+const credentialsDDL = `
+SET LOCAL lock_timeout = '2s';
+CREATE TABLE identity_credentials (
+    user_id       uuid PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    password_hash text NOT NULL,
+    updated_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE identity_second_factors (
+    user_id        uuid PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    secret         varchar(512) NOT NULL,
+    confirmed_at   timestamptz,
+    last_step      bigint NOT NULL DEFAULT 0,
+    recovery_codes jsonb NOT NULL DEFAULT '[]'::jsonb,
+    updated_at     timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE identity_challenges (
+    token_hash  char(64) PRIMARY KEY,
+    user_id     uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    step        varchar(16) NOT NULL,
+    failures    integer NOT NULL DEFAULT 0,
+    expires_at  timestamptz NOT NULL
+);
+CREATE INDEX ix_identity_challenges_expires_at ON identity_challenges (expires_at);
+
+INSERT INTO identity_credentials (user_id, password_hash)
+SELECT id, password_hash FROM users WHERE COALESCE(password_hash, '') <> '';
+
+DO $$ BEGIN
+IF to_regclass('user_second_factors') IS NOT NULL THEN
+    INSERT INTO identity_second_factors (user_id, secret, confirmed_at, last_step, recovery_codes)
+    SELECT user_id, secret, confirmed_at, last_step, recovery_codes FROM user_second_factors;
+END IF;
+END $$;
 `
