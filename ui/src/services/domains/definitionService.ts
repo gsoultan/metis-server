@@ -13,6 +13,7 @@ import type {
   CancelScheduledDefinitionResponse,
   ListDefinitionVersionsResponse,
   ListLiveVersionsResponse,
+  StartScheduleResponse,
   MigrateInstancesResponse,
   PromoteDefinitionResponse,
   ScheduleDefinitionResponse,
@@ -270,6 +271,30 @@ export const definitionService = {
       { method: "POST", body: { project_id: projectId, release_id: releaseId }, signal },
     );
     return { err: raiseIfRefused(response).err };
+  },
+
+  /**
+   * Whether a process starts on a schedule, whether that is paused, and when
+   * its next run is due.
+   */
+  async getStartSchedule(projectId: string, key: string, signal?: AbortSignal) {
+    const response = await requestJSON<StartScheduleResponse>(
+      `/definitions/start-schedule?project_id=${encodeURIComponent(projectId)}&key=${encodeURIComponent(key)}`,
+      { method: "GET", signal },
+    );
+    return { schedule: response.schedule ?? null, err: response.err };
+  },
+
+  /**
+   * Pauses a process's scheduled starts, or resumes them. Answers with where
+   * that leaves the schedule.
+   */
+  async setStartSchedulePaused(projectId: string, key: string, paused: boolean, signal?: AbortSignal) {
+    const response = await requestJSON<StartScheduleResponse>(
+      `/definitions/start-schedule/${paused ? "pause" : "resume"}`,
+      { method: "POST", body: { project_id: projectId, key }, signal },
+    );
+    return { schedule: raiseIfRefused(response).schedule ?? null };
   },
 
   /**

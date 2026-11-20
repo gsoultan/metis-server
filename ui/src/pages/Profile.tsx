@@ -13,6 +13,7 @@ import { Mail, Building2 } from 'lucide-react';
 import { useState } from 'react';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { ProfileForm } from '../components/ProfileForm';
+import { TwoFactorCard } from '../components/twoFactor/TwoFactorCard';
 import { DetailLoadingState, ErrorState } from '../components/state';
 import { useAppStore } from '../store/useAppStore';
 import { PageHeader } from '../components/PageHeader';
@@ -86,6 +87,8 @@ export function Profile() {
               ))}
             </Stack>
           </Paper>
+
+          <TwoFactorCard />
         </Stack>
 
         <Paper p="xl" radius="lg" withBorder shadow="sm" style={{ gridColumn: 'span 2' }}>
