@@ -53,6 +53,14 @@ export function useReleaseActions() {
       mutationFn: (v: { fromEnvironment: string; name: string }) => releaseService.importFrom(projectId, v.fromEnvironment, v.name),
       onSuccess: refresh,
     }),
+    importFile: useMutation({
+      mutationFn: (file: unknown) => releaseService.importFile(projectId, file),
+      onSuccess: refresh,
+    }),
+    attachLiveNote: useMutation({
+      mutationFn: (v: { name: string; note: unknown }) => releaseService.attachLiveNote(projectId, v.name, v.note),
+      onSuccess: refresh,
+    }),
     approve: useMutation({ mutationFn: (name: string) => releaseService.approve(projectId, name), onSuccess: refresh }),
     goLive: useMutation({ mutationFn: (name: string) => releaseService.goLive(projectId, name), onSuccess: refresh }),
     rollBack: useMutation({ mutationFn: () => releaseService.rollBack(projectId), onSuccess: refresh }),
