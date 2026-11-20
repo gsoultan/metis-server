@@ -6,6 +6,12 @@ func env(m map[string]string) func(string) string {
 	return func(k string) string { return m[k] }
 }
 
+// parse with the engine's role read from the same map, as engine.Role reads
+// the environment.
+func parse(getenv func(string) string) (Config, error) {
+	return parseWith(getenv, func() (string, error) { return getenv("METIS_ROLE"), nil })
+}
+
 func TestAnEngineElsewhereIsProxied(t *testing.T) {
 	cfg, err := parse(env(map[string]string{"METIS_ENGINE_URL": "http://localhost:8273"}))
 	if err != nil {

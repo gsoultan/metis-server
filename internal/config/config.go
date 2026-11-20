@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gsoultan/metis-server/internal/web"
+	"github.com/gsoultan/metis/engine"
 )
 
 // DefaultAddress is where metis-server listens when METIS_SERVER_ADDRESS is
@@ -68,26 +69,26 @@ func parseRole(value string) (Role, error) {
 	}
 }
 
-// FromEnv reads METIS_SERVER_ADDRESS, METIS_ROLE, METIS_ENGINE_URL and, when
-// the engine runs in this process, METIS_HTTP_ADDRESS.
+// FromEnv reads METIS_SERVER_ADDRESS, METIS_ENGINE_URL and, when the engine
+// runs in this process, METIS_HTTP_ADDRESS and the role: METIS_ROLE, or else
+// server.role in the engine's config.yaml, as the engine itself reads it.
 func FromEnv() (Config, error) {
-	return parse(os.Getenv)
+	return parseWith(os.Getenv, engine.Role)
 }
 
-func parse(getenv func(string) string) (Config, error) {
+func parseWith(getenv func(string) string, engineRole func() (string, error)) (Config, error) {
 	addr := strings.TrimSpace(getenv("METIS_SERVER_ADDRESS"))
 	if addr == "" {
 		addr = DefaultAddress
 	}
 
-	role, err := parseRole(getenv("METIS_ROLE"))
-	if err != nil {
-		return Config{}, err
-	}
-
 	if strings.TrimSpace(getenv("METIS_ENGINE_URL")) != "" {
 		// A machine in front of an engine elsewhere runs none of its work, so
 		// it can only be a web machine.
+		role, err := parseRole(getenv("METIS_ROLE"))
+		if err != nil {
+			return Config{}, err
+		}
 		if role != RoleAll && role != RoleWeb {
 			return Config{}, fmt.Errorf("METIS_ROLE=%s needs the engine in this process; unset METIS_ENGINE_URL", role)
 		}
@@ -96,6 +97,15 @@ func parse(getenv func(string) string) (Config, error) {
 			return Config{}, err
 		}
 		return Config{Address: addr, EngineURL: engine, Role: RoleWeb}, nil
+	}
+
+	read, err := engineRole()
+	if err != nil {
+		return Config{}, err
+	}
+	role, err := parseRole(read)
+	if err != nil {
+		return Config{}, err
 	}
 
 	engineAddr := strings.TrimSpace(getenv("METIS_HTTP_ADDRESS"))

@@ -2,7 +2,7 @@ module github.com/gsoultan/metis-server
 
 go 1.27.4
 
-require github.com/gsoultan/metis v0.7.7-0.20261120045617-86b7f5f24fce
+require github.com/gsoultan/metis v0.7.7-0.20261120050503-1b44e759b85a
 
 require (
 	aidanwoods.dev/go-paseto v1.6.0 // indirect
