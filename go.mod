@@ -2,7 +2,12 @@ module github.com/gsoultan/metis-server
 
 go 1.27.4
 
-require github.com/gsoultan/metis v0.7.7-0.20261118062140-17ec15596de6
+require (
+	github.com/google/uuid v1.6.0
+	github.com/gsoultan/metis v0.7.7-0.20261118062140-17ec15596de6
+	github.com/jackc/pgx/v5 v5.13.0
+	golang.org/x/crypto v0.59.0
+)
 
 require (
 	aidanwoods.dev/go-paseto v1.6.0 // indirect
@@ -72,7 +77,6 @@ require (
 	github.com/google/certificate-transparency-go v1.4.0 // indirect
 	github.com/google/go-containerregistry v0.22.1 // indirect
 	github.com/google/pprof v0.0.0-20260604005048-7023385849c0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0 // indirect
 	github.com/gsoultan/panmail-sdk v0.1.2 // indirect
 	github.com/gsoultan/storm v1.12.2 // indirect
@@ -80,7 +84,6 @@ require (
 	github.com/in-toto/in-toto-golang v0.11.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.13.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -119,7 +122,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.59.0 // indirect
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
