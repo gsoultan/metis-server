@@ -117,4 +117,56 @@ test.describe('how a process starts', () => {
     await expect(history.getByText('Starts on a schedule')).toBeVisible();
     await expect(history.getByText(/^Next run on .+, 09:00 \(in .+\)\.$/)).toBeVisible();
   });
+
+  test('an input declared on the start step is asked for at Run, and a start without it is refused', async ({ page, api }) => {
+    const name = uniqueName('E2E start inputs');
+    const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    const projectId = await sampleProjectId(api);
+    await deployReviewProcess(api, projectId, key, name, 'Look at the claim', []);
+
+    const designer = new Designer(page);
+    await designer.openFromProcesses(name);
+    const setup = await designer.openTab('Request received', 'Setup');
+    await setup.getByRole('combobox', { name: 'How this process starts' }).click();
+    await page.getByRole('option', { name: 'A message arrives' }).click();
+    const message = `${key}_claimed`;
+    await setup.getByRole('textbox', { name: 'Message name' }).fill(message);
+
+    await setup.getByRole('button', { name: 'Add Field' }).click();
+    await setup.getByRole('textbox', { name: 'Field label' }).fill('Reason');
+    // Typed a key at a time, as a person does: the box keeps the cursor.
+    const variable = setup.getByRole('textbox', { name: 'Field ID (Variable Key)' });
+    await variable.clear();
+    await variable.pressSequentially('reason');
+    await expect(variable).toHaveValue('reason');
+    await setup.getByRole('checkbox', { name: 'Required' }).check();
+    await designer.deploy('v2');
+
+    // However it arrives: the message that starts this process is refused without it.
+    const sent = await api.post('/api/v1/processes/message', {
+      data: { project_id: projectId, message_name: message, variables: {} },
+    });
+    expect(sent.ok(), 'a start without the required input was let through').toBe(false);
+    expect(await sent.text()).toContain('reason is required');
+
+    await page.goto('/models?tab=processes');
+    const row = page.getByRole('row', { name: new RegExp(name) });
+    await row.getByRole('button', { name: 'Run' }).click();
+    const run = page.getByRole('dialog', { name: `Start ${name}?` });
+    await run.getByRole('button', { name: 'Start' }).click();
+    // Asked for before anything is sent: the dialog stays, on the empty box.
+    await expect(run.getByRole('textbox', { name: 'Reason' })).toHaveJSProperty('validity.valueMissing', true);
+    await expect(run).toBeVisible();
+
+    await run.getByRole('textbox', { name: 'Reason' }).fill('Conference tickets');
+    await run.getByRole('button', { name: 'Start' }).click();
+    await expect(run).toBeHidden();
+    await page.goto('/instances');
+    await expect(page.getByRole('row', { name: new RegExp(name) }).first()).toContainText('Running');
+
+    // Reopened, the designer still shows the input.
+    await designer.openFromProcesses(name);
+    const reopened = await designer.openTab('Request received', 'Setup');
+    await expect(reopened.getByRole('textbox', { name: 'Field ID (Variable Key)' })).toHaveValue('reason');
+  });
 });

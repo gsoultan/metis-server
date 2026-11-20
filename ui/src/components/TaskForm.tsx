@@ -13,6 +13,7 @@ import {
   Tooltip,
   ActionIcon
 } from '@mantine/core';
+import type { ReactNode } from 'react';
 import { type FormField } from './FormBuilder';
 // Imported here rather than at the root: the date-picker stylesheet is only
 // needed where a picker is, and importing it eagerly pulled the whole
@@ -29,9 +30,16 @@ interface TaskFormProps {
   variables: Record<string, unknown>;
   onSubmit: (values: Record<string, unknown>) => void;
   loading?: boolean;
+  /**
+   * What the button that sends the form says and looks like, where the form
+   * is not finishing a task. Left out, it completes one.
+   */
+  submit?: { label: string; icon?: ReactNode; color?: string };
+  /** Shown beside the button as Cancel, where the form sits in a dialog. */
+  onCancel?: () => void;
 }
 
-export function TaskForm({ fields, variables, onSubmit, loading }: TaskFormProps) {
+export function TaskForm({ fields, variables, onSubmit, loading, submit, onCancel }: TaskFormProps) {
   const {
     values,
     errors,
@@ -132,13 +140,14 @@ export function TaskForm({ fields, variables, onSubmit, loading }: TaskFormProps
   if (fields.length === 0) {
     return (
         <Stack align="center" py="xl">
-            <Text size="sm" c="dimmed">No inputs required for this task.</Text>
+            <Text size="sm" c="dimmed">{submit ? 'Nothing is asked for.' : 'No inputs required for this task.'}</Text>
             <Button 
                 onClick={() => onSubmit({})} 
                 loading={loading}
-                leftSection={<CheckCircle size={16} />}
+                color={submit?.color}
+                leftSection={submit ? submit.icon : <CheckCircle size={16} />}
             >
-                Complete Task
+                {submit?.label ?? 'Complete Task'}
             </Button>
         </Stack>
     );
@@ -185,12 +194,14 @@ export function TaskForm({ fields, variables, onSubmit, loading }: TaskFormProps
       <Divider mt="xl" mb="md" />
       
       <Group justify="flex-end">
+        {onCancel && <Button variant="default" onClick={onCancel} disabled={loading}>Cancel</Button>}
         <Button 
           type="submit" 
           loading={loading}
-          leftSection={<CheckCircle size={16} />}
+          color={submit?.color}
+          leftSection={submit ? submit.icon : <CheckCircle size={16} />}
         >
-          Complete Task
+          {submit?.label ?? 'Complete Task'}
         </Button>
       </Group>
     </form>

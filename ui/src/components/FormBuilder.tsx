@@ -1,6 +1,7 @@
 import { 
   Stack, 
   TextInput, 
+  NumberInput,
   Select, 
   Checkbox, 
   Button, 
@@ -17,7 +18,7 @@ import { Plus, Trash2, GripVertical, Settings2, EyeOff, Zap, LayoutPanelTop, Pla
 import { v4 as uuidv4 } from 'uuid';
 import { VisualConditionBuilder } from './LowCodeComponents';
 import { TaskForm } from './TaskForm';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 export interface FormField {
   id: string;
@@ -48,9 +49,11 @@ export interface FormField {
 interface FormBuilderProps {
   fields: FormField[];
   onChange: (fields: FormField[]) => void;
+  /** What the preview's button says, where the form does not finish a task. */
+  previewSubmit?: { label: string; icon?: ReactNode; color?: string };
 }
 
-export function FormBuilder({ fields, onChange }: FormBuilderProps) {
+export function FormBuilder({ fields, onChange, previewSubmit }: FormBuilderProps) {
   const [activeTab, setActiveTab] = useState<string>('editor');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -64,12 +67,15 @@ export function FormBuilder({ fields, onChange }: FormBuilderProps) {
     onChange([...fields, newField]);
   };
 
-  const removeField = (id: string) => {
-    onChange(fields.filter(f => f.id !== id));
+  // By place, not by name. A name is typed a letter at a time, and on the way
+  // it can spell another field's name: found by name, the two were then
+  // renamed, edited and deleted as one.
+  const removeField = (index: number) => {
+    onChange(fields.filter((_, at) => at !== index));
   };
 
-  const updateField = (id: string, updates: Partial<FormField>) => {
-    onChange(fields.map(f => f.id === id ? { ...f, ...updates } : f));
+  const updateField = (index: number, updates: Partial<FormField>) => {
+    onChange(fields.map((f, at) => at === index ? { ...f, ...updates } : f));
   };
 
   const moveUp = (index: number) => {
@@ -135,7 +141,10 @@ export function FormBuilder({ fields, onChange }: FormBuilderProps) {
               <Stack gap="sm">
                 {fields.map((field, index) => (
                   <div
-                    key={field.id}
+                    // By place, not by name: the name is typed into a box in
+                    // this row, and a key that changed with every letter put
+                    // a new box there and took the cursor out of it.
+                    key={index}
                     draggable
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragOver={(e) => handleDragOver(e, index)}
@@ -148,8 +157,8 @@ export function FormBuilder({ fields, onChange }: FormBuilderProps) {
                   >
                     <FieldEditor 
                       field={field} 
-                      onUpdate={(updates) => updateField(field.id, updates)}
-                      onRemove={() => removeField(field.id)}
+                      onUpdate={(updates) => updateField(index, updates)}
+                      onRemove={() => removeField(index)}
                       onMoveUp={() => moveUp(index)}
                       onMoveDown={() => moveDown(index)}
                       isFirst={index === 0}
@@ -174,6 +183,7 @@ export function FormBuilder({ fields, onChange }: FormBuilderProps) {
                   fields={fields} 
                   variables={{}} 
                   onSubmit={(vals) => console.log('Preview submit:', vals)} 
+                  submit={previewSubmit}
                 />
               </Paper>
             </Stack>
@@ -270,7 +280,9 @@ function FieldEditor({
                     { value: 'section', label: 'Section/Group' },
                   ]}
                   value={field.type}
-                  onChange={(val) => onUpdate({ type: val as FormField['type'] })}
+                  // A default is of its field's kind: a text default left on
+                  // a number would be kept, unseen, and sent.
+                  onChange={(val) => val !== field.type && onUpdate({ type: val as FormField['type'], defaultValue: undefined })}
                 />
               </Group>
 
@@ -315,6 +327,8 @@ function FieldEditor({
                   />
                 </Box>
               </Group>
+
+              <DefaultValueInput field={field} onUpdate={onUpdate} />
 
               {field.type === 'select' && (!field.dataSource || field.dataSource.type === 'static') && (
                 <Box>
@@ -451,5 +465,95 @@ function FieldEditor({
         </Tabs>
       </Stack>
     </Paper>
+  );
+}
+
+/**
+ * What the field holds when nobody fills it in. Typed by the field's kind, so
+ * a number's default is saved as a number and a checkbox's as true or false.
+ */
+function DefaultValueInput({ field, onUpdate }: { field: FormField; onUpdate: (updates: Partial<FormField>) => void }) {
+  const label = 'Default value';
+  const description = 'What the field holds when nothing is given';
+  const current = field.defaultValue;
+
+  if (field.type === 'section') return null;
+
+  if (field.type === 'boolean') {
+    return (
+      <Checkbox
+        label="Ticked by default"
+        size="xs"
+        checked={current === true}
+        onChange={(e) => onUpdate({ defaultValue: e.target.checked })}
+      />
+    );
+  }
+
+  if (field.type === 'number') {
+    return <DefaultNumberInput key={field.id} label={label} description={description} current={current} onUpdate={onUpdate} />;
+  }
+
+  const listed = field.type === 'select' && (!field.dataSource || field.dataSource.type === 'static');
+  if (listed) {
+    // Each value once: while an option is being typed it can spell another's,
+    // and a list holding one value twice is refused by the control.
+    const choices = (field.options || []).filter(
+      (option, at, all) => option.value !== '' && all.findIndex((other) => other.value === option.value) === at,
+    );
+    return (
+      <Select
+        label={label}
+        description={description}
+        size="xs"
+        clearable
+        data={choices}
+        value={typeof current === 'string' && choices.some((choice) => choice.value === current) ? current : null}
+        onChange={(value) => onUpdate({ defaultValue: value ?? undefined })}
+      />
+    );
+  }
+
+  return (
+    <TextInput
+      label={label}
+      description={description}
+      size="xs"
+      placeholder={field.type === 'date' ? 'e.g. 2026-01-31' : undefined}
+      error={
+        field.type === 'date' && typeof current === 'string' && !/^\d{4}-\d{2}-\d{2}$/.test(current)
+          ? 'Write the date as year-month-day, such as 2026-01-31'
+          : undefined
+      }
+      value={typeof current === 'string' ? current : ''}
+      onChange={(e) => onUpdate({ defaultValue: e.target.value === '' ? undefined : e.target.value })}
+    />
+  );
+}
+
+/**
+ * A number's default. What is in the box is kept as typed, because "-" and
+ * "1." are on the way to a number and are not one yet; the default is saved
+ * each time the box holds a number.
+ */
+function DefaultNumberInput({ label, description, current, onUpdate }: {
+  label: string;
+  description: string;
+  current: unknown;
+  onUpdate: (updates: Partial<FormField>) => void;
+}) {
+  const [typed, setTyped] = useState<string | number>(typeof current === 'number' ? current : '');
+  return (
+    <NumberInput
+      label={label}
+      description={description}
+      size="xs"
+      value={typed}
+      onChange={(value) => {
+        setTyped(value);
+        if (typeof value === 'number') onUpdate({ defaultValue: value });
+        else if (value === '') onUpdate({ defaultValue: undefined });
+      }}
+    />
   );
 }
