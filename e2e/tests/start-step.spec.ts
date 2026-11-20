@@ -80,4 +80,41 @@ test.describe('how a process starts', () => {
     await expect(reopened.getByRole('combobox', { name: 'How this process starts' })).toHaveValue('On a schedule');
     await expect(reopened.getByText(/^Every minute \(/)).toBeVisible();
   });
+
+  test('a schedule can be paused and resumed from the version history', async ({ page, api }) => {
+    const name = uniqueName('E2E paused schedule');
+    const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    await deployReviewProcess(api, await sampleProjectId(api), key, name, 'Read the report', []);
+
+    const designer = new Designer(page);
+    await designer.openFromProcesses(name);
+    const setup = await designer.openTab('Request received', 'Setup');
+    await setup.getByRole('combobox', { name: 'How this process starts' }).click();
+    await page.getByRole('option', { name: 'On a schedule' }).click();
+    await expect(setup.getByText(/^Every weekday at 09:00 \(/)).toBeVisible();
+    await designer.deploy('v2');
+
+    await page.goto('/models?tab=processes');
+    await page.getByRole('button', { name: `More for ${name}` }).click();
+    await page.getByRole('menuitem', { name: `Version history of ${name}` }).click();
+    const history = page.getByRole('dialog', { name: `Version history: ${key}` });
+    // The live version has a schedule, so the dialog says when it next runs.
+    await expect(history.getByText('Starts on a schedule')).toBeVisible();
+    await expect(history.getByText(/^Next run on .+, 09:00 \(in .+\)\.$/)).toBeVisible();
+
+    await history.getByRole('button', { name: 'Pause schedule' }).click();
+    await expect(history.getByText('The schedule is paused', { exact: true })).toBeVisible();
+    await expect(history.getByText(/^Paused on .+\. Nothing starts by itself until you resume it\./)).toBeVisible();
+    await expect(history.getByText(/^Next run on/)).toHaveCount(0);
+
+    // The pause is the process's, so it is still there when the page is loaded again.
+    await page.reload();
+    await page.getByRole('button', { name: `More for ${name}` }).click();
+    await page.getByRole('menuitem', { name: `Version history of ${name}` }).click();
+    await expect(history.getByText('The schedule is paused', { exact: true })).toBeVisible();
+
+    await history.getByRole('button', { name: 'Resume schedule' }).click();
+    await expect(history.getByText('Starts on a schedule')).toBeVisible();
+    await expect(history.getByText(/^Next run on .+, 09:00 \(in .+\)\.$/)).toBeVisible();
+  });
 });
