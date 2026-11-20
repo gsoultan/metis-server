@@ -257,7 +257,8 @@ function propertySettings(node: ApiNode, version: VersionIndex): StepSetting[] {
   // the same difference should read the same way twice.
   return Object.keys(properties).sort().filter((key) => !DESIGNER_ONLY.has(key)).flatMap((key) => {
     const raw = properties[key];
-    if (key === 'form_definition') return formFieldSettings(raw);
+    if (key === 'form_definition') return formFieldSettings(raw, 'form', 'form field');
+    if (key === 'start_form') return formFieldSettings(raw, 'start', 'input');
     const read = PROPERTY_WORDS[key];
     return [read ? read(`prop:${key}`, raw, version) : unknownSetting(key, raw)];
   });
@@ -275,14 +276,14 @@ function unknownSetting(key: string, raw: unknown): StepSetting {
  * owner can use; a field that is gone is a value nobody is asked for any more,
  * and the gateways after it may still read it.
  */
-function formFieldSettings(raw: unknown): StepSetting[] {
+function formFieldSettings(raw: unknown, scope: 'form' | 'start', what: string): StepSetting[] {
   const { fields, error } = parseFormDefinition<{ id?: string; label?: string }>(
     typeof raw === 'string' ? raw : JSON.stringify(raw ?? null),
   );
-  if (error !== null) return [hidden('prop:form_definition', 'form', plain(raw))];
+  if (error !== null) return [hidden(scope === 'form' ? 'prop:form_definition' : 'prop:start_form', scope === 'form' ? 'form' : 'inputs', plain(raw))];
   return fields.map((field, index) => {
     const id = plain(field.id) || plain(field.label) || String(index);
-    return hidden(`form:${id}`, `form field "${plain(field.label) || id}"`, stableJson(field));
+    return hidden(`${scope}:${id}`, `${what} "${plain(field.label) || id}"`, stableJson(field));
   });
 }
 

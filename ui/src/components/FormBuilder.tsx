@@ -1,6 +1,7 @@
 import { 
   Stack, 
   TextInput, 
+  NumberInput,
   Select, 
   Checkbox, 
   Button, 
@@ -17,7 +18,7 @@ import { Plus, Trash2, GripVertical, Settings2, EyeOff, Zap, LayoutPanelTop, Pla
 import { v4 as uuidv4 } from 'uuid';
 import { VisualConditionBuilder } from './LowCodeComponents';
 import { TaskForm } from './TaskForm';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 export interface FormField {
   id: string;
@@ -48,9 +49,11 @@ export interface FormField {
 interface FormBuilderProps {
   fields: FormField[];
   onChange: (fields: FormField[]) => void;
+  /** What the preview's button says, where the form does not finish a task. */
+  previewSubmit?: { label: string; icon?: ReactNode; color?: string };
 }
 
-export function FormBuilder({ fields, onChange }: FormBuilderProps) {
+export function FormBuilder({ fields, onChange, previewSubmit }: FormBuilderProps) {
   const [activeTab, setActiveTab] = useState<string>('editor');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -135,7 +138,10 @@ export function FormBuilder({ fields, onChange }: FormBuilderProps) {
               <Stack gap="sm">
                 {fields.map((field, index) => (
                   <div
-                    key={field.id}
+                    // By place, not by name: the name is typed into a box in
+                    // this row, and a key that changed with every letter put
+                    // a new box there and took the cursor out of it.
+                    key={index}
                     draggable
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragOver={(e) => handleDragOver(e, index)}
@@ -174,6 +180,7 @@ export function FormBuilder({ fields, onChange }: FormBuilderProps) {
                   fields={fields} 
                   variables={{}} 
                   onSubmit={(vals) => console.log('Preview submit:', vals)} 
+                  submit={previewSubmit}
                 />
               </Paper>
             </Stack>
@@ -316,6 +323,8 @@ function FieldEditor({
                 </Box>
               </Group>
 
+              <DefaultValueInput field={field} onUpdate={onUpdate} />
+
               {field.type === 'select' && (!field.dataSource || field.dataSource.type === 'static') && (
                 <Box>
                   <Text size="xs" fw={700} mb="xs">Options</Text>
@@ -451,5 +460,66 @@ function FieldEditor({
         </Tabs>
       </Stack>
     </Paper>
+  );
+}
+
+/**
+ * What the field holds when nobody fills it in. Typed by the field's kind, so
+ * a number's default is saved as a number and a checkbox's as true or false.
+ */
+function DefaultValueInput({ field, onUpdate }: { field: FormField; onUpdate: (updates: Partial<FormField>) => void }) {
+  const label = 'Default value';
+  const description = 'What the field holds when nothing is given';
+  const current = field.defaultValue;
+
+  if (field.type === 'section') return null;
+
+  if (field.type === 'boolean') {
+    return (
+      <Checkbox
+        label="Ticked by default"
+        size="xs"
+        checked={current === true}
+        onChange={(e) => onUpdate({ defaultValue: e.target.checked ? true : undefined })}
+      />
+    );
+  }
+
+  if (field.type === 'number') {
+    return (
+      <NumberInput
+        label={label}
+        description={description}
+        size="xs"
+        value={typeof current === 'number' ? current : ''}
+        onChange={(value) => onUpdate({ defaultValue: typeof value === 'number' ? value : undefined })}
+      />
+    );
+  }
+
+  const listed = field.type === 'select' && (!field.dataSource || field.dataSource.type === 'static');
+  if (listed) {
+    return (
+      <Select
+        label={label}
+        description={description}
+        size="xs"
+        clearable
+        data={(field.options || []).filter((option) => option.value !== '')}
+        value={typeof current === 'string' && current !== '' ? current : null}
+        onChange={(value) => onUpdate({ defaultValue: value ?? undefined })}
+      />
+    );
+  }
+
+  return (
+    <TextInput
+      label={label}
+      description={description}
+      size="xs"
+      placeholder={field.type === 'date' ? 'e.g. 2026-01-31' : undefined}
+      value={typeof current === 'string' ? current : ''}
+      onChange={(e) => onUpdate({ defaultValue: e.target.value === '' ? undefined : e.target.value })}
+    />
   );
 }

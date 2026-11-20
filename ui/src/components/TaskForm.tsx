@@ -13,6 +13,7 @@ import {
   Tooltip,
   ActionIcon
 } from '@mantine/core';
+import type { ReactNode } from 'react';
 import { type FormField } from './FormBuilder';
 // Imported here rather than at the root: the date-picker stylesheet is only
 // needed where a picker is, and importing it eagerly pulled the whole
@@ -29,9 +30,16 @@ interface TaskFormProps {
   variables: Record<string, unknown>;
   onSubmit: (values: Record<string, unknown>) => void;
   loading?: boolean;
+  /**
+   * What the button that sends the form says and looks like, where the form
+   * is not finishing a task. Left out, it completes one.
+   */
+  submit?: { label: string; icon?: ReactNode; color?: string };
+  /** Shown beside the button as Cancel, where the form sits in a dialog. */
+  onCancel?: () => void;
 }
 
-export function TaskForm({ fields, variables, onSubmit, loading }: TaskFormProps) {
+export function TaskForm({ fields, variables, onSubmit, loading, submit, onCancel }: TaskFormProps) {
   const {
     values,
     errors,
@@ -185,12 +193,14 @@ export function TaskForm({ fields, variables, onSubmit, loading }: TaskFormProps
       <Divider mt="xl" mb="md" />
       
       <Group justify="flex-end">
+        {onCancel && <Button variant="default" onClick={onCancel}>Cancel</Button>}
         <Button 
           type="submit" 
           loading={loading}
-          leftSection={<CheckCircle size={16} />}
+          color={submit?.color}
+          leftSection={submit ? submit.icon : <CheckCircle size={16} />}
         >
-          Complete Task
+          {submit?.label ?? 'Complete Task'}
         </Button>
       </Group>
     </form>

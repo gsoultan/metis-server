@@ -1,10 +1,12 @@
 import { Alert, Button, Code, Group, JsonInput, Select, Stack, Text, TextInput } from '@mantine/core';
-import { Wand2 } from 'lucide-react';
+import { Play, Wand2 } from 'lucide-react';
 
 import type { NodeConfigProps } from '../PropertyPanel';
 import { asText } from '../../types/bpmn';
 import { defaultSchedule } from '../../domain/startSchedule';
+import { START_FORM, inputNamingProblem, inputsNeedingADefault, readStartInputs } from '../../domain/startInputs';
 import { START_TRIGGERS, chooseStartTrigger, scheduleOf, startTriggerOf, type StartTrigger } from '../../domain/startTrigger';
+import { FormBuilder } from '../FormBuilder';
 import { PropertySection } from './PropertySection';
 import { StartScheduleEditor } from './StartScheduleEditor';
 
@@ -36,6 +38,9 @@ export function StartEventConfig({ data, onUpdate }: NodeConfigProps) {
   const invalid = sample.trim() !== '' && !isJSONObject(sample);
   const trigger = startTriggerOf(data);
   const schedule = scheduleOf(data);
+  const inputs = readStartInputs(data[START_FORM]);
+  const naming = inputNamingProblem(inputs.fields);
+  const unfilled = trigger === 'schedule' ? inputsNeedingADefault(inputs.fields) : [];
 
   return (
     <Stack gap="xl">
@@ -76,7 +81,7 @@ export function StartEventConfig({ data, onUpdate }: NodeConfigProps) {
           <>
             <StartScheduleEditor schedule={schedule} onChange={(next) => onUpdate({ start_schedule: next })} />
             <Text size="xs" c="dimmed">
-              Only the live version runs on its schedule. A scheduled run starts with no data of its own.
+              Only the live version runs on its schedule. A scheduled run starts with the defaults of its inputs and nothing else.
             </Text>
           </>
         )}
@@ -90,6 +95,39 @@ export function StartEventConfig({ data, onUpdate }: NodeConfigProps) {
             >
               Choose when it runs again
             </Button>
+          </Alert>
+        )}
+      </PropertySection>
+
+      <PropertySection
+        title="What it starts with"
+        hint={
+          inputs.fields.length === 0
+            ? 'With no inputs, a run starts with whatever it is given, or with nothing.'
+            : 'Whoever starts a run is asked for these. A start that leaves out a required one is refused, however it arrives.'
+        }
+      >
+        {inputs.error !== null && (
+          <Alert variant="light" color="red" p="xs" title="The inputs cannot be read">
+            <Text size="xs">Adding a field replaces them.</Text>
+          </Alert>
+        )}
+        <FormBuilder
+          fields={inputs.fields}
+          onChange={(fields) => onUpdate({ [START_FORM]: fields.length > 0 ? fields : undefined })}
+          previewSubmit={{ label: 'Start', icon: <Play size={14} />, color: 'green' }}
+        />
+        {naming !== null && (
+          <Alert variant="light" color="red" p="xs">
+            <Text size="xs">{naming}</Text>
+          </Alert>
+        )}
+        {unfilled.length > 0 && (
+          <Alert variant="light" color="red" p="xs" title="A scheduled run has nobody to fill these in">
+            <Text size="xs">
+              Give {unfilled.join(', ')} a default value, or make {unfilled.length === 1 ? 'it' : 'them'} optional. The
+              process cannot be deployed on a schedule until then.
+            </Text>
           </Alert>
         )}
       </PropertySection>

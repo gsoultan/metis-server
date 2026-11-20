@@ -95,3 +95,39 @@ describe('the schedule editor', () => {
     expect(text).toContain('Its last date has passed, so it will not run again.');
   });
 });
+
+describe('what a process starts with', () => {
+  const amount = { id: 'amount', label: 'Amount', type: 'number', required: true };
+  const schedule = { every: 'day', at: '09:00', time_zone: 'UTC' };
+
+  it('says a start with no inputs takes whatever it is given', () => {
+    expect(visibleText(panel({}))).toContain('With no inputs, a run starts with whatever it is given, or with nothing.');
+  });
+
+  it('shows the inputs the engine holds a start to', () => {
+    const html = panel({ start_form: [amount] });
+    expect(labelledControl(html, 'Field ID (Variable Key)')?.value).toBe('amount');
+    expect(visibleText(html)).toContain('A start that leaves out a required one is refused, however it arrives.');
+  });
+
+  it('says a scheduled run has nobody to fill in a required input with no default', () => {
+    const text = visibleText(panel({ start_schedule: schedule, start_form: [amount] }));
+    expect(text).toContain('A scheduled run has nobody to fill these in');
+    expect(text).toContain('Give amount a default value, or make it optional.');
+  });
+
+  it('says nothing of the kind once the input has a default', () => {
+    const text = visibleText(panel({ start_schedule: schedule, start_form: [{ ...amount, defaultValue: 0 }] }));
+    expect(text).not.toContain('A scheduled run has nobody to fill these in');
+  });
+
+  it('says two inputs with one name cannot be deployed', () => {
+    const text = visibleText(panel({ start_form: [amount, { ...amount, label: 'Total' }] }));
+    expect(text).toContain('Two inputs are named amount.');
+  });
+
+  it('says so when the saved inputs cannot be read', () => {
+    expect(visibleText(panel({ start_form: '{not json' }))).toContain('The inputs cannot be read');
+  });
+});
+

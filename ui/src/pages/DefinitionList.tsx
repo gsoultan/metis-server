@@ -17,7 +17,6 @@ import {
   Tooltip,
   Menu,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { useNavigate } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -45,9 +44,9 @@ import { rowVersions } from '../domain/versionRollout';
 // the state to this shape avoids coupling to either the list's or the detail
 // endpoint's fuller (and differently-cased) type.
 type DefinitionRef = { id: string; key: string; name: string; version: number };
-import { useDefinition, useDefinitions, useStartProcess } from '../hooks/useProcess';
+import { useDefinition, useDefinitions } from '../hooks/useProcess';
+import { StartRunDialog } from '../components/StartRunDialog';
 import { useLiveVersions } from '../hooks/useDefinitions';
-import { errorMessage } from '../services/shared/errors';
 import { useTranslation } from '../i18n/context';
 
 dayjs.extend(relativeTime);
@@ -61,15 +60,13 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const { data, isLoading, error, refetch } = useDefinitions(page, pageSize);
-  const startProcess = useStartProcess();
   const { data: liveData } = useLiveVersions();
   const liveVersions = liveData?.live ?? {};
   const [selectedDef, setSelectedDef] = useState<DefinitionRef | null>(null);
   const [historyKey, setHistoryKey] = useState<string | null>(null);
   const [wizardOpened, setWizardOpened] = useState(false);
-  // The process waiting for "yes, start it", and the one being started.
+  // The process waiting for "yes, start it".
   const [pendingRun, setPendingRun] = useState<DefinitionRef | null>(null);
-  const [startingKey, setStartingKey] = useState<string | null>(null);
 
   const { data: fullDefData, isLoading: isFullLoading } = useDefinition(selectedDef?.id || null);
 
@@ -93,20 +90,6 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
   /** The version waiting behind the live one for this key, if any. */
   const stagedFor = (key: string) =>
     rows.find((row) => row.live.key === key)?.staged?.version ?? null;
-
-  const startNow = async (def: DefinitionRef) => {
-    setPendingRun(null);
-    setStartingKey(def.key);
-    try {
-      // startProcess raises on a refusal, so the catch below is the one path.
-      await startProcess.mutateAsync({ definitionKey: def.key });
-      notifications.show({ title: `Started ${def.name}`, message: 'Follow it under Instances.', color: 'green' });
-    } catch (err: unknown) {
-      notifications.show({ title: `Could not start ${def.name}`, message: errorMessage(err, 'It did not start.'), color: 'red' });
-    } finally {
-      setStartingKey(null);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -255,7 +238,6 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
                           color="green"
                           leftSection={<Play size={14} />}
                           onClick={() => setPendingRun(def)}
-                          loading={startingKey === def.key}
                         >
                           Run
                         </Button>
@@ -331,25 +313,7 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
         )}
       </Card>
 
-      <Modal
-        opened={pendingRun !== null}
-        onClose={() => setPendingRun(null)}
-        title={<Text fw={700}>Start {pendingRun?.name}?</Text>}
-        radius="lg"
-      >
-        <Stack gap="md">
-          <Text size="sm">
-            A new instance of version {pendingRun?.version} starts now. Its first steps run immediately, and anyone
-            given a task in it is notified.
-          </Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setPendingRun(null)}>Cancel</Button>
-            <Button color="green" leftSection={<Play size={14} />} onClick={() => pendingRun && startNow(pendingRun)}>
-              Start
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      <StartRunDialog target={pendingRun} onClose={() => setPendingRun(null)} />
 
       {/*
         The history is fetched rather than derived from the list page: which
