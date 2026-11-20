@@ -11,8 +11,9 @@ import {
   Box,
   ThemeIcon,
   Group,
+  Loader,
 } from '@mantine/core';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '../store/useAppStore';
 import { processService } from '../services/api';
@@ -31,6 +32,19 @@ import {
 import { toStoreUser } from '../mappers/userMapper';
 import { signInError } from '../domain/signInError';
 import { signInNotice, signInReturnAddress, type SignInReason } from '../domain/signInReturn';
+import type { LoginResponse, SecondFactorStep as Step } from '../services/types';
+
+// Loaded only when a password needs a code: the sign-in page is on the first
+// paint, and the QR encoder and the enrolment screens are not.
+const SecondFactorStep = lazy(() =>
+  import('../components/twoFactor/SecondFactorStep').then((m) => ({ default: m.SecondFactorStep })),
+);
+
+/** A correct password still waiting on its second step. */
+interface PendingSignIn {
+  step: Step;
+  challenge: string;
+}
 
 // Plain statements of what the product does, not marketing superlatives. The
 // login page used to claim "sub-millisecond" execution and "GDPR-compliant"
@@ -50,9 +64,21 @@ export function Login({ redirectTo, reason }: { redirectTo?: string; reason?: Si
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingSignIn | null>(null);
   const setAuth = useAppStore((state) => state.setAuth);
   const navigate = useNavigate();
   const notice = signInNotice(reason);
+
+  const finishSignIn = async ({ user, token }: LoginResponse) => {
+    if (!user || !token) {
+      setPending(null);
+      setError('Invalid response from server');
+      return;
+    }
+    setAuth(toStoreUser(user), token);
+    // The address came in the query string: only an in-app path is followed.
+    await navigate({ href: signInReturnAddress(redirectTo) });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,14 +86,15 @@ export function Login({ redirectTo, reason }: { redirectTo?: string; reason?: Si
     setError(null);
 
     try {
-      const { user, token, err } = await processService.login(username, password);
+      const { user, token, secondFactor, challenge, err } = await processService.login(username, password);
       
       if (err) {
         setError(err.message || 'Login failed');
+      } else if (secondFactor && challenge) {
+        setPassword('');
+        setPending({ step: secondFactor, challenge });
       } else if (user && token) {
-        setAuth(toStoreUser(user), token);
-        // The address came in the query string: only an in-app path is followed.
-        await navigate({ href: signInReturnAddress(redirectTo) });
+        await finishSignIn({ user, token });
       } else {
         setError('Invalid response from server');
       }
@@ -227,6 +254,17 @@ export function Login({ redirectTo, reason }: { redirectTo?: string; reason?: Si
                 radius="lg" 
                 className="login-card"
               >
+                {pending !== null && (
+                  <Suspense fallback={<Center p="md"><Loader size="sm" /></Center>}>
+                    <SecondFactorStep
+                      step={pending.step}
+                      challenge={pending.challenge}
+                      onSignedIn={finishSignIn}
+                      onStartOver={() => setPending(null)}
+                    />
+                  </Suspense>
+                )}
+                {pending === null && (
                 <form onSubmit={handleSubmit}>
                   <Stack gap="md">
                     {/*
@@ -308,6 +346,7 @@ export function Login({ redirectTo, reason }: { redirectTo?: string; reason?: Si
                     </Button>
                   </Stack>
                 </form>
+                )}
               </Paper>
             </Stack>
           </Box>

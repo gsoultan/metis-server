@@ -14,7 +14,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useNavigate } from '@tanstack/react-router';
-import { Edit2, Plus, Search, ShieldCheck, Trash2, User, UserCircle } from 'lucide-react';
+import { Edit2, Plus, Search, ShieldCheck, ShieldOff, Trash2, User, UserCircle } from 'lucide-react';
 import { useState, useTransition } from 'react';
 
 import { AccountDialog } from '../components/access/AccountDialog';
@@ -25,6 +25,7 @@ import { EmptyState, ErrorState, TableLoadingState } from '../components/state';
 import { matchesQuery } from '../domain/textSearch';
 import { useOrganizations } from '../hooks/useOrganization';
 import { useDeleteUser, useUsers } from '../hooks/useUser';
+import { useResetSecondFactor } from '../hooks/useSecondFactor';
 import { errorMessage } from '../services/shared/errors';
 import type { ApiOrganizationUser } from '../services/types';
 import { useAppStore } from '../store/useAppStore';
@@ -49,6 +50,9 @@ export function UserList() {
   const { data, isLoading, error, refetch } = useUsers();
   const { data: orgData } = useOrganizations();
   const deleteUser = useDeleteUser();
+  const resetSecondFactor = useResetSecondFactor();
+  // Nobody removes their own app: the server refuses it, so it is not offered.
+  const signedInId = useAppStore((state) => state.user?.id);
   const { currentOrganizationId } = useAppStore();
 
   const [dialog, setDialog] = useState<OpenDialog | null>(null);
@@ -76,6 +80,20 @@ export function UserList() {
       notifications.show({ title: 'Deleted', message: `${who} no longer has an account.`, color: 'green' });
     } catch (error: unknown) {
       notifications.show({ title: 'Could not delete them', message: errorMessage(error, 'Failed to delete the account'), color: 'red' });
+    }
+  };
+
+  const handleResetSecondFactor = async (user: ApiOrganizationUser) => {
+    const who = user.full_name || user.username;
+    const consequence =
+      `Remove ${who}'s authenticator app? They are signed out everywhere and set up a new app at their next sign-in. ` +
+      'Do this only once you know it is really them asking, for example because they lost their phone.';
+    if (!window.confirm(consequence)) return;
+    try {
+      await resetSecondFactor.mutateAsync(user.id);
+      notifications.show({ title: 'Authenticator app removed', message: `${who} sets up a new one at their next sign-in.`, color: 'green' });
+    } catch (error: unknown) {
+      notifications.show({ title: 'Could not remove it', message: errorMessage(error, 'Failed to remove the authenticator app'), color: 'red' });
     }
   };
 
@@ -181,6 +199,13 @@ export function UserList() {
                                 <Edit2 size={16} />
                               </ActionIcon>
                             </Tooltip>
+                            {u.id !== signedInId && (
+                              <Tooltip label="Remove authenticator app">
+                                <ActionIcon aria-label={`Remove the authenticator app of ${u.full_name || u.username}`} variant="light" color="orange" onClick={() => handleResetSecondFactor(u)}>
+                                  <ShieldOff size={16} />
+                                </ActionIcon>
+                              </Tooltip>
+                            )}
                             <Tooltip label="Delete account">
                               <ActionIcon aria-label={`Delete ${u.full_name || u.username}`} variant="light" color="red" onClick={() => handleDelete(u)}>
                                 <Trash2 size={16} />

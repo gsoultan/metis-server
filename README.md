@@ -50,6 +50,26 @@ address in the engine's rate limiter and audit log.
 The engine does all authentication and authorization. metis-server only serves
 files and forwards requests; it holds no secrets and no database.
 
+### Signing in with an authenticator app
+
+A Metis engine asks staff for a second factor after their password. The web
+app carries the screens for it; the engine decides and enforces it, so a
+program that calls the engine directly cannot skip it.
+
+- **At sign-in**, after a correct password, the app asks for the six-digit
+  code from the account's authenticator app, or one of its recovery codes.
+- **The first time**, an account without an app sets one up there: a QR code
+  to scan (drawn in the page; the secret never leaves it), the first code to
+  confirm, and ten one-use recovery codes, shown once.
+- **Profile** shows whether the app is on and how many recovery codes are
+  left, and makes new ones with a current code from the app.
+- **Platform access** lets an administrator remove somebody else's app, for a
+  lost phone: their sessions end and they set up a new one at their next
+  sign-in. Nobody removes their own.
+
+Engines older than two-factor sign-in answer a password with a session, and
+the app signs in as before.
+
 ### Programs and the Go SDK
 
 Programs use [`gsoultan/metis-sdk`](https://github.com/gsoultan/metis-sdk).
@@ -57,8 +77,13 @@ Every call it makes is under `/api/v1`, so it works pointed at metis-server or
 at the engine directly, with the same token:
 
 ```go
-client := metis.NewClient("https://metis.example.com", metis.WithToken(token)) // no /api/v1: the client adds it
+client := metis.NewClient("https://metis.example.com", metis.WithAPIKey(key)) // no /api/v1: the client adds it
 ```
+
+A program does not sign in with a person's password, which needs a code from
+an authenticator app. It uses its organization's integration API key
+(`mik_…`), made by an administrator of the organization, which acts there with
+the roles it was given and is never asked for a code.
 
 Through metis-server, the engine's `METIS_TRUSTED_PROXIES` matters for
 programs too: without it a busy program shares one rate limit with every
@@ -143,6 +168,8 @@ Some UI tests read the other repositories' source, so `make gate` needs
 checkouts next to this one: `gsoultan/metis` (`../metis`, or
 `METIS_ENGINE_DIR`) and `gsoultan/metis-sdk` (`../metis-sdk`, or
 `METIS_SDK_DIR`). `make e2e` needs the engine checkout too. See [`e2e/README.md`](e2e/README.md).
+The suite signs in with a password alone, so `scripts/e2e.sh` starts the
+engine with `METIS_DEV_MODE=true METIS_TWO_FACTOR=optional`.
 
 ## History
 

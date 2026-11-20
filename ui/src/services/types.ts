@@ -32,10 +32,38 @@ export interface ApiUser {
   projects?: Array<{ id: string; name: string }>;
 }
 
-/** Shape of the /login REST response. */
+/** The step a password sign-in still needs before it is a session. */
+export type SecondFactorStep = "code" | "enrol";
+
+/**
+ * Shape of the /login REST response, and of the second-factor steps after it.
+ * A correct password for an account that needs a code answers a challenge
+ * instead of a session: `second_factor` names the step and `challenge` is good
+ * for that step alone, for a few minutes.
+ */
 export interface LoginResponse {
   user?: ApiUser;
   token?: string;
+  second_factor?: SecondFactorStep;
+  challenge?: string;
+  challenge_expires_at?: string;
+  /** Only from confirming an authenticator app: shown this once. */
+  recovery_codes?: string[];
+}
+
+/** What setting up an authenticator app starts from. */
+export interface SecondFactorEnrolment {
+  secret: string;
+  /** The otpauth:// address a QR code carries. */
+  otpauth_uri: string;
+}
+
+/** Whether the signed-in account signs in with an authenticator app. */
+export interface SecondFactorStatus {
+  enrolled: boolean;
+  confirmed_at?: string;
+  recovery_codes_left: number;
+  required: boolean;
 }
 
 // ─── Definitions ─────────────────────────────────────────────────────────────
