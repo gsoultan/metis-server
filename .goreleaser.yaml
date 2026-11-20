@@ -1,11 +1,12 @@
 # What a tag publishes: Linux archives and packages of metis-server, the web
-# app and the server that serves it in front of a metis engine.
+# app and sign-in with the metis engine running in the same process.
 #
 # Modelled on the engine's .goreleaser.yaml (gsoultan/metis) and kept
 # consistent with it: the same formats, the same version stamp, the same
 # service layout, the same signing. The differences are what metis-server is:
-# it embeds a UI that has to be built first, it keeps no state, and it needs
-# none of the engine's secrets.
+# it embeds a UI that has to be built first, and its names are its own
+# (metis-server, /etc/metis-server, /var/lib/metis-server), so it never
+# collides with the engine's own package on one host.
 #
 # **Linux only, deliberately**, as for the engine: it is a server, and nothing
 # tests it on macOS or Windows. Both Linux architectures ship.
@@ -66,9 +67,9 @@ archives:
 # apk is Alpine (OpenRC, not systemd); archlinux is Arch and its derivatives.
 #
 # The packages install and stop there, as the engine's do. They do not enable,
-# start or restart the service: METIS_ENGINE_URL has to be checked first, and
-# on an upgrade the web app and the engine are moved together, by the
-# operator.
+# start or restart the service: on a fresh host that opens the setup wizard on
+# the network, which is the operator's call, and an upgrade carries the
+# engine's schema migrations, so it waits for a backup and a restart.
 nfpms:
   - id: metis-server
     package_name: metis-server
@@ -86,18 +87,14 @@ nfpms:
     maintainer: Gembit Soultan Shirazi <gembit.soultan@gmail.com>
     homepage: https://github.com/gsoultan/metis-server
     description: |-
-      The Metis web app, in front of a metis BPMN and DMN engine.
-      A static binary with the web app embedded, run as a systemd service;
-      it forwards the app's API calls to the engine named in its settings.
+      Metis BPM: the web app, sign-in and the BPMN 2.0 and DMN engine in one
+      static binary, run as a systemd service against a PostgreSQL database.
     license: MIT
     section: net
     priority: optional
     bindir: /usr/bin
-    # A static binary: no shared libraries to depend on. It needs a metis
-    # engine, but not necessarily on this host, so the engine package is
-    # suggested rather than required.
-    suggests:
-      - metis
+    # A static binary: no shared libraries to depend on. It needs a
+    # PostgreSQL, but not necessarily on this host, so it is not a dependency.
     contents:
       - src: deploy/linux/metis-server.service
         dst: /usr/lib/systemd/system/metis-server.service
@@ -126,15 +123,23 @@ nfpms:
           mode: 0750
           owner: root
           group: metis-server
+      # Holds secrets (DATABASE_URL, JWT_SECRET, ENCRYPTION_KEY), hence 0640
+      # and group-readable only by the service.
       # config|noreplace: an upgrade never overwrites the operator's edits.
-      # Group-readable by the service only, as the engine's is, so a secret
-      # added here later is not world-readable by default.
       - src: deploy/linux/metis-server.env
         dst: /etc/metis-server/metis-server.env
         type: config|noreplace
         file_info:
           mode: 0640
           owner: root
+          group: metis-server
+      # State: the setup wizard's config.yaml (with the at-rest encryption
+      # key) and the directory stores. The unit's working directory.
+      - dst: /var/lib/metis-server
+        type: dir
+        file_info:
+          mode: 0750
+          owner: metis-server
           group: metis-server
 
       - src: LICENSE
@@ -203,9 +208,9 @@ release:
     ## Running it
 
     The `.deb`, `.rpm`, `.apk` and `.pkg.tar.zst` packages install
-    metis-server as a service; the archives are the same build for anyone
-    deploying the binary directly. It needs a metis engine
-    (https://github.com/gsoultan/metis/releases), on this host or another.
+    metis-server, with the engine in its process, as a service; the archives
+    are the same build for anyone deploying the binary directly. It needs a
+    PostgreSQL, on this host or another.
 
     Verify a download against `checksums.txt`, and `checksums.txt` against
     its signature:
@@ -217,7 +222,7 @@ release:
       --certificate-oidc-issuer https://token.actions.githubusercontent.com
     ```
 
-    A package installs the service without starting it: check
-    `METIS_ENGINE_URL` in `/etc/metis-server/metis-server.env`, run
+    A package installs the service without starting it: run
     `systemctl enable --now metis-server`, then open
-    `http://<server>:8080`.
+    `http://<server>:8080/setup` and choose the database there, with the
+    setup token from `journalctl -u metis-server`.

@@ -311,10 +311,26 @@ jobs:
     # whoever installed it. As in the engine's CI, this builds them from the
     # same .goreleaser.yaml the release uses, installs each on its own
     # distribution, and boots the deb under the runner's real systemd with the
-    # unit's hardening in force.
+    # unit's hardening in force, against PostgreSQL, since the engine runs in
+    # the same process.
     #
     # The UI is built by the release's own before hook rather than taken from
     # the ui job, so the step a tag depends on is the step this proves.
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: metis
+          POSTGRES_PASSWORD: metis
+          POSTGRES_DB: metis
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U metis"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout
@@ -364,6 +380,7 @@ jobs:
           id metis-server
           test "$(stat -c %U:%G:%a /etc/metis-server)" = root:metis-server:750
           test "$(stat -c %U:%G:%a /etc/metis-server/metis-server.env)" = root:metis-server:640
+          test "$(stat -c %U:%G:%a /var/lib/metis-server)" = metis-server:metis-server:750
           test -x /usr/bin/metis-server
           SH
           run() { docker run --rm -v "$PWD/dist:/d" -v "$RUNNER_TEMP/check.sh:/check.sh:ro" "$1" sh -euc "$2"; }
@@ -376,24 +393,28 @@ jobs:
           run archlinux:latest \
             "pacman -U --noconfirm /d/*-x86_64.pkg.tar.zst; sh /check.sh; test -f /usr/lib/systemd/system/metis-server.service; pacman -R --noconfirm metis-server"
 
-      # No engine runs here, on purpose: /server/healthz must not follow the
-      # engine's health, the app must still be served, and the forwarded API
-      # must answer 502 rather than hang. That is metis-server's contract
-      # (AGENTS.md section 0), checked on the installed service.
+      # The whole server as a package installs it: the engine in the process,
+      # the database and secrets from the env file, under the unit's
+      # hardening. /readyz is the engine's readiness, reached through
+      # metis-server; / must be the real app, not the 503 placeholder a build
+      # without the UI serves.
       - name: Boot the deb under systemd
         run: |
           set -euo pipefail
           sudo apt-get install -y ./dist/*_amd64.deb
           sudo systemd-analyze verify metis-server.service
+          sudo tee -a /etc/metis-server/metis-server.env >/dev/null <<ENV
+          DATABASE_URL="postgres://metis:metis@127.0.0.1:5432/metis?sslmode=disable"
+          ENCRYPTION_KEY="$(openssl rand -hex 24)"
+          JWT_SECRET="$(openssl rand -base64 48 | tr -d '\n')"
+          ENV
           sudo systemctl start metis-server
-          for i in $(seq 1 30); do
-            if curl -fsS -o /dev/null localhost:8080/server/healthz 2>/dev/null; then
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null localhost:8080/readyz 2>/dev/null; then
               echo "ready after ${i}s"
-              # The real app, not the 503 placeholder a build without the UI
-              # serves.
+              curl -fsS localhost:8080/healthz; echo
+              curl -fsS -o /dev/null -w 'server/healthz %{http_code}\n' localhost:8080/server/healthz
               curl -fsS localhost:8080/ | grep -q '<title>Metis BPM</title>'
-              code="$(curl -sS -o /dev/null -w '%{http_code}' localhost:8080/api/v1/setup/status)"
-              test "$code" = 502 || { echo "::error::/api with no engine answered $code, not 502"; exit 1; }
               exit 0
             fi
             if systemctl is-failed --quiet metis-server; then
@@ -403,7 +424,7 @@ jobs:
             fi
             sleep 1
           done
-          echo "::error::/server/healthz never answered within 30s. The service log:"
+          echo "::error::/readyz never answered within 90s. The service log:"
           sudo journalctl -u metis-server --no-pager | tail -100
           exit 1
 

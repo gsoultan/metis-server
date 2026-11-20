@@ -163,22 +163,29 @@ Each release (`v*` tag) publishes deb, rpm, apk and Arch packages for amd64
 and arm64, and plain archives, on the
 [releases page](https://github.com/gsoultan/metis-server/releases), with a
 signed `checksums.txt` (the release notes show the `cosign verify-blob`
-command). A package installs `/usr/bin/metis-server`, a hardened systemd unit
-(OpenRC on Alpine), a `metis-server` system account, and
-`/etc/metis-server/metis-server.env`, which the package manager keeps across
-upgrades. It does not start the service:
+command). Linux only: nothing is built for macOS or Windows.
+
+A package installs all of Metis on the machine: `/usr/bin/metis-server` with
+the engine in its process, a hardened systemd unit (OpenRC on Alpine), a
+`metis-server` system account, `/var/lib/metis-server` for its state (the
+setup wizard's `config.yaml` lands there), and
+`/etc/metis-server/metis-server.env` for its settings and secrets, which the
+package manager keeps across upgrades. It needs a PostgreSQL, on this host or
+another. It does not start the service:
 
 ```bash
 sudo apt-get install ./metis-server_<version>_amd64.deb
-sudoedit /etc/metis-server/metis-server.env   # METIS_ENGINE_URL
 sudo systemctl enable --now metis-server
+# open http://<server>:8080/setup and choose the database there;
+# the setup token is in: journalctl -u metis-server | grep "setup token"
 ```
 
-With the engine's own package on the same host, both default to `:8080`; the
-env file says how to move the engine to `127.0.0.1:8273`. The packages are
-built by `.goreleaser.yaml`, which builds the UI first, and CI installs them on
-Debian, Rocky, Alpine and Arch and boots the deb under systemd on every pull
-request.
+Or set `DATABASE_URL`, `JWT_SECRET` and `ENCRYPTION_KEY` in the env file
+before starting it, and `METIS_ROLE` for a `web` or `worker` machine. After an
+upgrade, take a backup, then `systemctl restart metis-server`; the package
+never restarts it. The packages are built by `.goreleaser.yaml`, which builds
+the UI first, and CI installs them on Debian, Rocky, Alpine and Arch and boots
+the deb under systemd against PostgreSQL on every pull request.
 
 ## Developing the UI
 
