@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/gsoultan/metis-server/internal/config"
+	"github.com/gsoultan/metis-server/internal/identity/assemble"
+	"github.com/gsoultan/metis-server/internal/identity/httpapi"
 	"github.com/gsoultan/metis-server/internal/web"
 	"github.com/gsoultan/metis-server/ui"
 	"github.com/gsoultan/metis/engine"
@@ -44,7 +46,7 @@ func run() error {
 	// `upgrade`, run against this installation's database and exit without
 	// serving anything.
 	if args := os.Args[1:]; len(args) > 0 {
-		return engine.New().Run(ctx, args)
+		return engine.New(withIdentity(nil)).Run(ctx, args)
 	}
 
 	cfg, err := config.FromEnv()
@@ -58,6 +60,19 @@ func run() error {
 		}
 	} else {
 		handler = web.NewWorkerHandler(cfg.EngineURL)
+	}
+	// With the engine in this process, metis-server signs people in and
+	// checks integration API keys, and the engine trusts who it is told the
+	// caller is. An engine elsewhere signs its own callers in.
+	//
+	// A worker machine still builds the front, since the engine's Identity is
+	// served through it, but never serves it: nobody signs in on a worker.
+	var front *httpapi.Front
+	if cfg.Embedded {
+		front = httpapi.NewFront(handler, httpapi.EngineMe(cfg.EngineURL), slog.Default())
+		if cfg.Role.ServesPeople() {
+			handler = front
+		}
 	}
 
 	// The engine stops when this does, and this stops when the engine does: a
@@ -73,7 +88,7 @@ func run() error {
 			return err
 		}
 		go func() {
-			engineDone <- engine.New().Run(ctx, nil)
+			engineDone <- engine.New(withIdentity(front)).Run(ctx, nil)
 		}()
 	}
 
@@ -120,6 +135,22 @@ func run() error {
 		}
 	}
 	return result
+}
+
+// withIdentity hands the engine's signing in to metis-server's identity, and
+// once it is built, its routes to front. front is nil for the maintenance
+// commands, which serve nothing.
+func withIdentity(front *httpapi.Front) engine.Option {
+	return engine.WithIdentity(func(ctx context.Context, env engine.IdentityEnv) (engine.Identity, error) {
+		id, err := assemble.New(ctx, env, os.Getenv, slog.Default())
+		if err != nil {
+			return nil, err
+		}
+		if front != nil {
+			front.Ready(id)
+		}
+		return id, nil
+	})
 }
 
 func engineDescription(cfg config.Config) string {
