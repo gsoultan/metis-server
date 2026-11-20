@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"net"
 	"net/url"
 	"os"
@@ -32,10 +33,43 @@ type Config struct {
 	// EngineAddress is the embedded engine's listen address, which it reads
 	// from METIS_HTTP_ADDRESS. Empty when the engine is elsewhere.
 	EngineAddress string
+	// Role is what this machine does, from METIS_ROLE. The embedded engine
+	// reads the same variable.
+	Role Role
 }
 
-// FromEnv reads METIS_SERVER_ADDRESS, METIS_ENGINE_URL and, when the engine
-// runs in this process, METIS_HTTP_ADDRESS.
+// Role is what one metis-server machine does. Every machine uses the same
+// database.
+type Role string
+
+const (
+	// RoleAll serves the web app and the API and runs the engine's work. The
+	// default, and what a single machine runs.
+	RoleAll Role = "all"
+	// RoleWeb serves the web app and the API and runs none of the engine's
+	// jobs, timers or deliveries. A worker or an all machine does them.
+	RoleWeb Role = "web"
+	// RoleWorker runs the engine's work and serves only its health checks:
+	// people reach the installation through the web machines.
+	RoleWorker Role = "worker"
+)
+
+// ServesPeople reports whether the machine serves the web app and the API.
+func (r Role) ServesPeople() bool { return r != RoleWorker }
+
+func parseRole(value string) (Role, error) {
+	switch role := Role(strings.ToLower(strings.TrimSpace(value))); role {
+	case "", RoleAll:
+		return RoleAll, nil
+	case RoleWeb, RoleWorker:
+		return role, nil
+	default:
+		return "", fmt.Errorf("METIS_ROLE=%q is not a role: use all, web or worker", value)
+	}
+}
+
+// FromEnv reads METIS_SERVER_ADDRESS, METIS_ROLE, METIS_ENGINE_URL and, when
+// the engine runs in this process, METIS_HTTP_ADDRESS.
 func FromEnv() (Config, error) {
 	return parse(os.Getenv)
 }
@@ -46,12 +80,22 @@ func parse(getenv func(string) string) (Config, error) {
 		addr = DefaultAddress
 	}
 
+	role, err := parseRole(getenv("METIS_ROLE"))
+	if err != nil {
+		return Config{}, err
+	}
+
 	if strings.TrimSpace(getenv("METIS_ENGINE_URL")) != "" {
+		// A machine in front of an engine elsewhere runs none of its work, so
+		// it can only be a web machine.
+		if role != RoleAll && role != RoleWeb {
+			return Config{}, fmt.Errorf("METIS_ROLE=%s needs the engine in this process; unset METIS_ENGINE_URL", role)
+		}
 		engine, err := web.ParseEngineURL(getenv("METIS_ENGINE_URL"))
 		if err != nil {
 			return Config{}, err
 		}
-		return Config{Address: addr, EngineURL: engine}, nil
+		return Config{Address: addr, EngineURL: engine, Role: RoleWeb}, nil
 	}
 
 	engineAddr := strings.TrimSpace(getenv("METIS_HTTP_ADDRESS"))
@@ -62,7 +106,7 @@ func parse(getenv func(string) string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	return Config{Address: addr, EngineURL: engine, Embedded: true, EngineAddress: engineAddr}, nil
+	return Config{Address: addr, EngineURL: engine, Embedded: true, EngineAddress: engineAddr, Role: role}, nil
 }
 
 // dialable turns a listen address into one to connect to: a listener on every

@@ -51,9 +51,13 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	handler, err := web.NewHandler(ui.Dist(), cfg.EngineURL)
-	if err != nil {
-		return err
+	var handler http.Handler
+	if cfg.Role.ServesPeople() {
+		if handler, err = web.NewHandler(ui.Dist(), cfg.EngineURL); err != nil {
+			return err
+		}
+	} else {
+		handler = web.NewWorkerHandler(cfg.EngineURL)
 	}
 
 	// The engine stops when this does, and this stops when the engine does: a
@@ -83,7 +87,7 @@ func run() error {
 	}
 	serveDone := make(chan error, 1)
 	go func() {
-		slog.Info("metis-server listening", "address", cfg.Address, "engine", engineDescription(cfg), "version", version, "engine_version", engine.Version())
+		slog.Info("metis-server listening", "address", cfg.Address, "role", string(cfg.Role), "engine", engineDescription(cfg), "version", version, "engine_version", engine.Version())
 		serveDone <- srv.ListenAndServe()
 	}()
 

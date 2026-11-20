@@ -197,3 +197,30 @@ func TestParseEngineURL(t *testing.T) {
 		}
 	}
 }
+
+// A worker machine answers its health checks and nothing a person uses.
+func TestAWorkerMachineServesOnlyHealth(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(srv.Close)
+	u, err := ParseEngineURL(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := NewWorkerHandler(u)
+	for path, want := range map[string]int{
+		"/healthz":          http.StatusOK,
+		"/readyz":           http.StatusOK,
+		"/server/healthz":   http.StatusNoContent,
+		"/":                 http.StatusNotFound,
+		"/api/v1/processes": http.StatusNotFound,
+		"/login":            http.StatusNotFound,
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
+		if rec.Code != want {
+			t.Errorf("GET %s: %d, want %d", path, rec.Code, want)
+		}
+	}
+}
