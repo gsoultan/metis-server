@@ -55,6 +55,28 @@ export const releaseService = {
     return one(`${releasePath(projectId, name)}/go-live`);
   },
 
+  /** A release imported from a signed file carried from another server. */
+  importFile(projectId: string, file: unknown): Promise<Release> {
+    return one(`${releasesPath(projectId)}/import-file`, { file });
+  },
+
+  /** The release as a signed file, to carry where this server cannot reach. */
+  async exportFile(projectId: string, name: string): Promise<unknown> {
+    const reply = await requestJSON<{ file?: unknown }>(`${releasePath(projectId, name)}/export`);
+    return reply.file;
+  },
+
+  /** This environment's signed note that the release went live here. */
+  async liveNote(projectId: string, name: string): Promise<unknown> {
+    const reply = await requestJSON<{ note?: unknown }>(`${releasePath(projectId, name)}/live-note`);
+    return reply.note;
+  },
+
+  /** The note that the release went live in the environment before this one. */
+  attachLiveNote(projectId: string, name: string, note: unknown): Promise<Release> {
+    return one(`${releasePath(projectId, name)}/live-note`, { note });
+  },
+
   rollBack(projectId: string): Promise<Release> {
     return one(`${releasesPath(projectId)}/rollback`);
   },
