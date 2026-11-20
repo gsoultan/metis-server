@@ -7,7 +7,7 @@ type FormValues = Record<string, unknown>;
 type FormErrors = Record<string, string | null>;
 type ExternalOptions = Record<string, Array<{ value: string; label: string }>>;
 
-function evaluateExpression(expression: string, values: FormValues, variables: FormValues): boolean {
+export function evaluateExpression(expression: string, values: FormValues, variables: FormValues): boolean {
   return evaluateFormCondition(expression, { data: values, vars: variables });
 }
 

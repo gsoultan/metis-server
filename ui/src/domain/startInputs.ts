@@ -42,13 +42,13 @@ export function readStartInputs(raw: unknown): StartInputs {
 
 interface DeployedStep {
   type?: string;
-  parentId?: string;
+  parent_id?: string;
   properties?: Record<string, unknown>;
 }
 
 /** The inputs of a deployed process: those of its first start step. */
 export function startInputsOfProcess(nodes: readonly DeployedStep[] | undefined): StartInputs {
-  const start = (nodes ?? []).find((node) => node.type === 'startEvent' && !node.parentId);
+  const start = (nodes ?? []).find((node) => node.type === 'startEvent' && !node.parent_id);
   return readStartInputs(start?.properties?.[START_FORM]);
 }
 
@@ -88,12 +88,21 @@ export function inputNamingProblem(fields: readonly FormField[]): string | null 
  * The variables to start a run with, from what the form holds.
  *
  * An input left empty is not sent, so the engine fills in its default or says
- * it is required. A date is sent as the day it names.
+ * it is required. Neither is one the form was not showing: what sits in a
+ * hidden field is not something the person chose. A date is sent as the day
+ * it names.
+ *
+ * The form starts a number at 0 and a tick box unticked, and those are values:
+ * they are sent as they stand.
  */
-export function startVariables(fields: readonly FormField[], values: Record<string, unknown>): Record<string, unknown> {
+export function startVariables(
+  fields: readonly FormField[],
+  values: Record<string, unknown>,
+  isHidden: (field: FormField) => boolean = () => false,
+): Record<string, unknown> {
   const variables: Record<string, unknown> = {};
   for (const field of fields) {
-    if (field.type === 'section') continue;
+    if (field.type === 'section' || isHidden(field)) continue;
     const value = values[field.id];
     if (hasNoValue(value)) continue;
     variables[field.id] = value instanceof Date ? value.toISOString().slice(0, 10) : value;

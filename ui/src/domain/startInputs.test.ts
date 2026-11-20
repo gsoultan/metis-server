@@ -25,7 +25,7 @@ describe('reading a start step\'s inputs', () => {
 
   it('takes a process\'s inputs from its first start step, not one inside a sub-process', () => {
     const nodes = [
-      { type: 'startEvent', parentId: 'sub', properties: { start_form: [currency] } },
+      { type: 'startEvent', parent_id: 'sub', properties: { start_form: [currency] } },
       { type: 'userTask', properties: { start_form: [currency] } },
       { type: 'startEvent', properties: { start_form: [amount] } },
     ];
@@ -57,6 +57,11 @@ describe('the variables a run is started with', () => {
   it('leaves out what was left empty, so the engine fills the default or refuses', () => {
     const note: FormField = { id: 'note', label: 'Note', type: 'text' };
     expect(startVariables([amount, currency, note], { amount: 0, currency: null, note: ' ' })).toEqual({ amount: 0 });
+  });
+
+  it('sends nothing for an input the form was not showing', () => {
+    const reason: FormField = { id: 'reason', label: 'Reason', type: 'text', defaultValue: 'none' };
+    expect(startVariables([amount, reason], { amount: 5, reason: 'none' }, (field) => field.id === 'reason')).toEqual({ amount: 5 });
   });
 
   it('sends a date as the day, and nothing for a heading', () => {

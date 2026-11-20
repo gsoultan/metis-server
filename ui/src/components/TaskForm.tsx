@@ -140,13 +140,14 @@ export function TaskForm({ fields, variables, onSubmit, loading, submit, onCance
   if (fields.length === 0) {
     return (
         <Stack align="center" py="xl">
-            <Text size="sm" c="dimmed">No inputs required for this task.</Text>
+            <Text size="sm" c="dimmed">{submit ? 'Nothing is asked for.' : 'No inputs required for this task.'}</Text>
             <Button 
                 onClick={() => onSubmit({})} 
                 loading={loading}
-                leftSection={<CheckCircle size={16} />}
+                color={submit?.color}
+                leftSection={submit ? submit.icon : <CheckCircle size={16} />}
             >
-                Complete Task
+                {submit?.label ?? 'Complete Task'}
             </Button>
         </Stack>
     );
@@ -193,7 +194,7 @@ export function TaskForm({ fields, variables, onSubmit, loading, submit, onCance
       <Divider mt="xl" mb="md" />
       
       <Group justify="flex-end">
-        {onCancel && <Button variant="default" onClick={onCancel}>Cancel</Button>}
+        {onCancel && <Button variant="default" onClick={onCancel} disabled={loading}>Cancel</Button>}
         <Button 
           type="submit" 
           loading={loading}

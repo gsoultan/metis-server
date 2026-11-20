@@ -118,7 +118,7 @@ export function StartEventConfig({ data, onUpdate }: NodeConfigProps) {
           previewSubmit={{ label: 'Start', icon: <Play size={14} />, color: 'green' }}
         />
         {naming !== null && (
-          <Alert variant="light" color="red" p="xs">
+          <Alert variant="light" color="red" p="xs" title="These inputs cannot be deployed yet">
             <Text size="xs">{naming}</Text>
           </Alert>
         )}

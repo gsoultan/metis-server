@@ -67,12 +67,15 @@ export function FormBuilder({ fields, onChange, previewSubmit }: FormBuilderProp
     onChange([...fields, newField]);
   };
 
-  const removeField = (id: string) => {
-    onChange(fields.filter(f => f.id !== id));
+  // By place, not by name. A name is typed a letter at a time, and on the way
+  // it can spell another field's name: found by name, the two were then
+  // renamed, edited and deleted as one.
+  const removeField = (index: number) => {
+    onChange(fields.filter((_, at) => at !== index));
   };
 
-  const updateField = (id: string, updates: Partial<FormField>) => {
-    onChange(fields.map(f => f.id === id ? { ...f, ...updates } : f));
+  const updateField = (index: number, updates: Partial<FormField>) => {
+    onChange(fields.map((f, at) => at === index ? { ...f, ...updates } : f));
   };
 
   const moveUp = (index: number) => {
@@ -154,8 +157,8 @@ export function FormBuilder({ fields, onChange, previewSubmit }: FormBuilderProp
                   >
                     <FieldEditor 
                       field={field} 
-                      onUpdate={(updates) => updateField(field.id, updates)}
-                      onRemove={() => removeField(field.id)}
+                      onUpdate={(updates) => updateField(index, updates)}
+                      onRemove={() => removeField(index)}
                       onMoveUp={() => moveUp(index)}
                       onMoveDown={() => moveDown(index)}
                       isFirst={index === 0}
@@ -277,7 +280,9 @@ function FieldEditor({
                     { value: 'section', label: 'Section/Group' },
                   ]}
                   value={field.type}
-                  onChange={(val) => onUpdate({ type: val as FormField['type'] })}
+                  // A default is of its field's kind: a text default left on
+                  // a number would be kept, unseen, and sent.
+                  onChange={(val) => val !== field.type && onUpdate({ type: val as FormField['type'], defaultValue: undefined })}
                 />
               </Group>
 
@@ -480,33 +485,30 @@ function DefaultValueInput({ field, onUpdate }: { field: FormField; onUpdate: (u
         label="Ticked by default"
         size="xs"
         checked={current === true}
-        onChange={(e) => onUpdate({ defaultValue: e.target.checked ? true : undefined })}
+        onChange={(e) => onUpdate({ defaultValue: e.target.checked })}
       />
     );
   }
 
   if (field.type === 'number') {
-    return (
-      <NumberInput
-        label={label}
-        description={description}
-        size="xs"
-        value={typeof current === 'number' ? current : ''}
-        onChange={(value) => onUpdate({ defaultValue: typeof value === 'number' ? value : undefined })}
-      />
-    );
+    return <DefaultNumberInput key={field.id} label={label} description={description} current={current} onUpdate={onUpdate} />;
   }
 
   const listed = field.type === 'select' && (!field.dataSource || field.dataSource.type === 'static');
   if (listed) {
+    // Each value once: while an option is being typed it can spell another's,
+    // and a list holding one value twice is refused by the control.
+    const choices = (field.options || []).filter(
+      (option, at, all) => option.value !== '' && all.findIndex((other) => other.value === option.value) === at,
+    );
     return (
       <Select
         label={label}
         description={description}
         size="xs"
         clearable
-        data={(field.options || []).filter((option) => option.value !== '')}
-        value={typeof current === 'string' && current !== '' ? current : null}
+        data={choices}
+        value={typeof current === 'string' && choices.some((choice) => choice.value === current) ? current : null}
         onChange={(value) => onUpdate({ defaultValue: value ?? undefined })}
       />
     );
@@ -518,8 +520,40 @@ function DefaultValueInput({ field, onUpdate }: { field: FormField; onUpdate: (u
       description={description}
       size="xs"
       placeholder={field.type === 'date' ? 'e.g. 2026-01-31' : undefined}
+      error={
+        field.type === 'date' && typeof current === 'string' && !/^\d{4}-\d{2}-\d{2}$/.test(current)
+          ? 'Write the date as year-month-day, such as 2026-01-31'
+          : undefined
+      }
       value={typeof current === 'string' ? current : ''}
       onChange={(e) => onUpdate({ defaultValue: e.target.value === '' ? undefined : e.target.value })}
+    />
+  );
+}
+
+/**
+ * A number's default. What is in the box is kept as typed, because "-" and
+ * "1." are on the way to a number and are not one yet; the default is saved
+ * each time the box holds a number.
+ */
+function DefaultNumberInput({ label, description, current, onUpdate }: {
+  label: string;
+  description: string;
+  current: unknown;
+  onUpdate: (updates: Partial<FormField>) => void;
+}) {
+  const [typed, setTyped] = useState<string | number>(typeof current === 'number' ? current : '');
+  return (
+    <NumberInput
+      label={label}
+      description={description}
+      size="xs"
+      value={typed}
+      onChange={(value) => {
+        setTyped(value);
+        if (typeof value === 'number') onUpdate({ defaultValue: value });
+        else if (value === '') onUpdate({ defaultValue: undefined });
+      }}
     />
   );
 }

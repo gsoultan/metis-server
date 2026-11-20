@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { startInputsOfProcess, startVariables } from '../domain/startInputs';
 import { useDefinition, useStartProcess } from '../hooks/useProcess';
+import { evaluateExpression } from '../hooks/useTaskForm';
 import { errorMessage } from '../services/shared/errors';
 import type { ProcessVariables } from '../services/types';
 import { TaskForm } from './TaskForm';
@@ -28,19 +29,25 @@ export interface RunTarget {
  * A process with no inputs gets the question it always got.
  */
 export function StartRunDialog({ target, onClose }: { target: RunTarget | null; onClose: () => void }) {
+  // Held open while a start is on its way: closed then, a refusal would have
+  // nowhere to be shown and the start would look as if it had worked.
+  const [starting, setStarting] = useState(false);
   return (
     <Modal
       opened={target !== null}
       onClose={onClose}
+      closeOnEscape={!starting}
+      closeOnClickOutside={!starting}
+      withCloseButton={!starting}
       title={<Text fw={700}>Start {target?.name}?</Text>}
       radius="lg"
     >
-      {target && <StartRun key={target.id} target={target} onClose={onClose} />}
+      {target && <StartRun key={target.id} target={target} onClose={onClose} onStarting={setStarting} />}
     </Modal>
   );
 }
 
-function StartRun({ target, onClose }: { target: RunTarget; onClose: () => void }) {
+function StartRun({ target, onClose, onStarting }: { target: RunTarget; onClose: () => void; onStarting: (starting: boolean) => void }) {
   const { data, isLoading, error } = useDefinition(target.id);
   const startProcess = useStartProcess();
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -49,6 +56,7 @@ function StartRun({ target, onClose }: { target: RunTarget; onClose: () => void 
 
   const start = async (variables?: Record<string, unknown>) => {
     setRefusal(null);
+    onStarting(true);
     try {
       // startProcess raises on a refusal, so the catch below is the one path.
       await startProcess.mutateAsync({ definitionKey: target.key, variables: variables as ProcessVariables | undefined });
@@ -56,6 +64,8 @@ function StartRun({ target, onClose }: { target: RunTarget; onClose: () => void 
       onClose();
     } catch (err: unknown) {
       setRefusal(errorMessage(err, 'It did not start.'));
+    } finally {
+      onStarting(false);
     }
   };
 
@@ -72,7 +82,7 @@ function StartRun({ target, onClose }: { target: RunTarget; onClose: () => void 
         given a task in it is notified.
       </Text>
 
-      {error && (
+      {(error || data?.err) && (
         <Alert variant="light" color="orange" p="xs">
           <Text size="xs">What this process asks for could not be loaded, so it is not asked for here.</Text>
         </Alert>
@@ -92,14 +102,16 @@ function StartRun({ target, onClose }: { target: RunTarget; onClose: () => void 
         <TaskForm
           fields={inputs.fields}
           variables={{}}
-          onSubmit={(values) => start(startVariables(inputs.fields, values))}
+          onSubmit={(values) =>
+            start(startVariables(inputs.fields, values, (field) => evaluateExpression(field.logic?.hiddenIf || '', values, {})))
+          }
           loading={startProcess.isPending}
           submit={{ label: 'Start', icon: <Play size={14} />, color: 'green' }}
           onCancel={onClose}
         />
       ) : (
         <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>Cancel</Button>
+          <Button variant="default" onClick={onClose} disabled={startProcess.isPending}>Cancel</Button>
           <Button
             color="green"
             leftSection={<Play size={14} />}
