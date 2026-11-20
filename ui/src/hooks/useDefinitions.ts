@@ -14,6 +14,7 @@ import { errorMessage } from '../services/shared/errors';
 type DefinitionsResult = Awaited<ReturnType<typeof processService.listDefinitions>>;
 type DefinitionResult = Awaited<ReturnType<typeof processService.getDefinition>>;
 type DefinitionVersionsResult = Awaited<ReturnType<typeof processService.listDefinitionVersions>>;
+type StartScheduleResult = Awaited<ReturnType<typeof processService.getStartSchedule>>;
 type LiveVersionsResult = Awaited<ReturnType<typeof processService.listLiveVersions>>;
 
 export const useDefinitions = (page = 1, pageSize = 25) => {
@@ -68,6 +69,7 @@ export const useCreateDefinition = () => {
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['definitions', currentProjectId] });
       queryClient.invalidateQueries({ queryKey: ['definitionVersions', currentProjectId, variables.definition.key] });
+      queryClient.invalidateQueries({ queryKey: ['startSchedule', currentProjectId] });
       queryClient.invalidateQueries({ queryKey: ['liveVersions', currentProjectId] });
     },
   });
@@ -112,6 +114,7 @@ export const useScheduleDefinitionVersion = () => {
         : Promise.reject('No project selected'),
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['definitionVersions', currentProjectId, variables.key] });
+      queryClient.invalidateQueries({ queryKey: ['startSchedule', currentProjectId] });
       queryClient.invalidateQueries({ queryKey: ['liveVersions', currentProjectId] });
     },
   });
@@ -128,7 +131,39 @@ export const useCancelScheduledVersion = () => {
         : Promise.reject('No project selected'),
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['definitionVersions', currentProjectId, variables.key] });
+      queryClient.invalidateQueries({ queryKey: ['startSchedule', currentProjectId] });
       queryClient.invalidateQueries({ queryKey: ['liveVersions', currentProjectId] });
+    },
+  });
+};
+
+/**
+ * Whether one process starts on a schedule, whether that is paused, and when
+ * its next run is due. Asked only while a key is given.
+ */
+export const useStartSchedule = (key: string | null) => {
+  const currentProjectId = useAppStore((state) => state.currentProjectId);
+  return useQuery({
+    queryKey: ['startSchedule', currentProjectId, key],
+    queryFn: ({ signal }) =>
+      currentProjectId && key
+        ? processService.getStartSchedule(currentProjectId, key, signal)
+        : Promise.resolve({ schedule: null, err: '' } as StartScheduleResult),
+    enabled: !!currentProjectId && !!key,
+  });
+};
+
+/** Pauses a process's scheduled starts, or resumes them. */
+export const useSetStartSchedulePaused = () => {
+  const queryClient = useQueryClient();
+  const currentProjectId = useAppStore((state) => state.currentProjectId);
+  return useMutation({
+    mutationFn: ({ key, paused }: { key: string; paused: boolean }) =>
+      currentProjectId
+        ? processService.setStartSchedulePaused(currentProjectId, key, paused)
+        : Promise.reject('No project selected'),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['startSchedule', currentProjectId, variables.key] });
     },
   });
 };
@@ -165,6 +200,7 @@ export const usePromoteDefinitionVersion = () => {
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['definitions', currentProjectId] });
       queryClient.invalidateQueries({ queryKey: ['definitionVersions', currentProjectId, variables.key] });
+      queryClient.invalidateQueries({ queryKey: ['startSchedule', currentProjectId] });
       queryClient.invalidateQueries({ queryKey: ['liveVersions', currentProjectId] });
     },
   });
@@ -211,6 +247,7 @@ export const useMigrateInstances = () => {
       queryClient.invalidateQueries({ queryKey: ['instances', currentProjectId] });
       queryClient.invalidateQueries({ queryKey: ['tasks', currentProjectId] });
       queryClient.invalidateQueries({ queryKey: ['definitionVersions', currentProjectId] });
+      queryClient.invalidateQueries({ queryKey: ['startSchedule', currentProjectId] });
     },
   });
 };
@@ -225,6 +262,7 @@ export const useDeleteDefinition = () => {
       // The version history and the list page's live map both name versions by
       // number, so removing one has to refresh them or they keep offering it.
       queryClient.invalidateQueries({ queryKey: ['definitionVersions', currentProjectId] });
+      queryClient.invalidateQueries({ queryKey: ['startSchedule', currentProjectId] });
       queryClient.invalidateQueries({ queryKey: ['liveVersions', currentProjectId] });
     },
   });
