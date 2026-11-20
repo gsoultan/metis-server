@@ -38,3 +38,23 @@ func NewHandler(dist fs.FS, engineURL *url.URL) (http.Handler, error) {
 	mux.Handle("/", securityHeaders(static))
 	return mux, nil
 }
+
+// NewWorkerHandler is what a worker machine serves: the engine's health
+// checks and its own, for a load balancer or an orchestrator, and nothing a
+// person uses. People reach the installation through the web machines, and a
+// worker that answered them too would be one more way in to keep patched and
+// watched.
+func NewWorkerHandler(engineURL *url.URL) http.Handler {
+	engine := NewEngineProxy(engineURL)
+	mux := http.NewServeMux()
+	mux.Handle("GET /healthz", engine)
+	mux.Handle("GET /readyz", engine)
+	mux.HandleFunc("GET /server/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "This machine runs the engine's work only. Open Metis through a web machine.", http.StatusNotFound)
+	})
+	return mux
+}
