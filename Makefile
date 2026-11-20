@@ -44,8 +44,8 @@ build: ## Build bin/metis-server (run ui-build first for a binary with the UI in
 	$(GO) build -trimpath -o bin/metis-server ./cmd/metis-server
 
 .PHONY: run
-run: build ## Run metis-server against METIS_ENGINE_URL (default http://localhost:8273)
-	METIS_ENGINE_URL=$${METIS_ENGINE_URL:-http://localhost:8273} ./bin/metis-server
+run: build ## Run metis-server, with the engine in its own process unless METIS_ENGINE_URL names one
+	./bin/metis-server
 
 .PHONY: fmt-check
 fmt-check: ## Fail on any Go file gofmt would change

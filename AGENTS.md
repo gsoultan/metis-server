@@ -78,7 +78,7 @@ Proof`, as the engine's profiles do.
 | Path | Contents |
 | :-- | :-- |
 | `cmd/metis-server/` | Entry point: reads settings, serves, shuts down on SIGTERM |
-| `internal/config/` | `METIS_ENGINE_URL`, `METIS_SERVER_ADDRESS` |
+| `internal/config/` | `METIS_ENGINE_URL` (unset: the engine runs in this process), `METIS_HTTP_ADDRESS`, `METIS_SERVER_ADDRESS` |
 | `internal/web/` | The handler: static files, security headers, the engine proxy |
 | `ui/` | The React app (Vite, Mantine, TanStack Router); `ui/embed.go` embeds `ui/dist` |
 | `e2e/` | Playwright suite, run against metis-server in front of a real engine |

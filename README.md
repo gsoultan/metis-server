@@ -7,20 +7,29 @@ Metis is split in two repositories:
 | Repository | What it is |
 | :-- | :-- |
 | [`gsoultan/metis`](https://github.com/gsoultan/metis) | **The engine.** BPMN 2.0 orchestration, the DMN decision engine, the API, its database. Headless: it serves no pages. |
-| `gsoultan/metis-server` (this one) | **Everything a person uses.** The web app (designer, inbox, admin pages) and the Go server that serves it and forwards its API calls to an engine. |
+| `gsoultan/metis-server` (this one) | **Everything a person uses.** The web app (designer, inbox, admin pages) and the Go server that serves it. It runs the engine in its own process, from the metis library, or forwards to one elsewhere. |
 | [`gsoultan/metis-sdk`](https://github.com/gsoultan/metis-sdk) | The Go client for programs. It talks to the engine's API, directly or through metis-server. |
 
 ## Running it
 
-metis-server needs a running engine. Point `METIS_ENGINE_URL` at it:
+metis-server runs the engine in its own process, from the
+[`engine`](https://github.com/gsoultan/metis/tree/main/engine) package, so one
+program and one PostgreSQL database are all an installation needs. The engine
+reads its own settings (`DATABASE_URL`, `ENCRYPTION_KEY`, `JWT_SECRET` and the
+rest; see the engine's README) from the same environment:
 
 ```bash
 make ui-deps ui-build                       # once, and after any UI change
-METIS_ENGINE_URL=http://localhost:8273 make run
+DATABASE_URL=postgres://… ENCRYPTION_KEY=… JWT_SECRET=… make run
 # open http://localhost:8080
 ```
 
-Or the whole stack (PostgreSQL, an engine built from `../metis`, and metis-server):
+The engine's maintenance commands run through the same binary, for example
+`metis-server --reset-password alice` or `metis-server --help`.
+
+To use an engine running elsewhere instead, set `METIS_ENGINE_URL`, and
+metis-server forwards the API to it. Or the whole stack (PostgreSQL, an engine
+built from `../metis`, and metis-server):
 
 ```bash
 docker compose up --build
@@ -30,10 +39,15 @@ docker compose up --build
 
 | Variable | Default | What it does |
 | :-- | :-- | :-- |
-| `METIS_ENGINE_URL` | (required) | The engine's base address, such as `http://localhost:8273`. http or https, no path. |
+| `METIS_ENGINE_URL` | (unset) | Unset: run the engine in this process. Set: the base address of an engine elsewhere, such as `http://localhost:8273` (http or https, no path), which the API is forwarded to. |
+| `METIS_HTTP_ADDRESS` | `127.0.0.1:8273` | Where the engine in this process serves its API. Loopback, so it is reached through metis-server. |
 | `METIS_SERVER_ADDRESS` | `:8080` | Where metis-server listens. |
 
-On the **engine**, set `METIS_TRUSTED_PROXIES` to include metis-server's
+With the engine in this process, metis-server forwards each request to it on
+loopback, with the browser's address in `X-Forwarded-For`. The engine trusts
+loopback by default; if you set `METIS_TRUSTED_PROXIES`, include `127.0.0.1/32`.
+
+With an engine elsewhere, set on the **engine** `METIS_TRUSTED_PROXIES` to include metis-server's
 address. metis-server sends the browser's address in `X-Forwarded-For`, and the
 engine believes it only from a trusted proxy. Without it every user shares one
 address in the engine's rate limiter and audit log.
