@@ -35,6 +35,18 @@ built from `../metis`, and metis-server):
 docker compose up --build
 ```
 
+### More than one machine
+
+Point every machine at the same database and give each a role. Put the `web`
+machines behind your load balancer and keep `worker` machines off it: they
+answer only their health checks. Work is claimed with leases, so any number of
+workers share it without doing anything twice.
+
+```bash
+METIS_ROLE=web    metis-server   # behind the load balancer, as many as you need
+METIS_ROLE=worker metis-server   # doing the jobs, as many as you need
+```
+
 ### Settings
 
 | Variable | Default | What it does |
@@ -42,6 +54,7 @@ docker compose up --build
 | `METIS_ENGINE_URL` | (unset) | Unset: run the engine in this process. Set: the base address of an engine elsewhere, such as `http://localhost:8273` (http or https, no path), which the API is forwarded to. |
 | `METIS_HTTP_ADDRESS` | `127.0.0.1:8273` | Where the engine in this process serves its API. Loopback, so it is reached through metis-server. |
 | `METIS_SERVER_ADDRESS` | `:8080` | Where metis-server listens. |
+| `METIS_ROLE` | `all` | `all`: serve people and run the engine's jobs, timers and deliveries. `web`: serve people, run none of the work. `worker`: run the work and serve only `/healthz`, `/readyz` and `/server/healthz`. Every machine points at the same database; run at least one `all` or `worker` beside any `web` machines. Also read from `server.role` in `config.yaml`, where joining a machine writes it; the environment wins. With `METIS_ENGINE_URL` set the machine is always `web`. |
 
 With the engine in this process, metis-server forwards each request to it on
 loopback, with the browser's address in `X-Forwarded-For`. The engine trusts
