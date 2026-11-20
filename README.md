@@ -7,7 +7,7 @@ Metis is split in two repositories:
 | Repository | What it is |
 | :-- | :-- |
 | [`gsoultan/metis`](https://github.com/gsoultan/metis) | **The engine.** BPMN 2.0 orchestration, the DMN decision engine, the API, its database. Headless: it serves no pages. |
-| `gsoultan/metis-server` (this one) | **Everything a person uses.** The web app (designer, inbox, admin pages) and the Go server that serves it. It runs the engine in its own process, from the metis library, or forwards to one elsewhere. |
+| `gsoultan/metis-server` (this one) | **Everything a person uses.** The web app (designer, inbox, admin pages) and the Go server that serves it. It runs the engine in its own process, from the metis library, or forwards to one elsewhere. With the engine in its process, it also signs people in: passwords, sessions, authenticator apps and integration API keys. |
 | [`gsoultan/metis-sdk`](https://github.com/gsoultan/metis-sdk) | The Go client for programs. It talks to the engine's API, directly or through metis-server. |
 
 ## Running it
@@ -69,19 +69,46 @@ address in the engine's rate limiter and audit log.
 
 | Path | Goes to |
 | :-- | :-- |
-| `/api/…` (including the live updates at `/api/v1/events`) | The engine, unchanged |
+| Sign-in and keys: `/api/v1/login…`, `/api/v1/logout`, `/api/v1/users/me/password`, `/api/v1/users/me/two-factor…`, `/api/v1/integration-keys…` | metis-server's own identity, with the engine in this process; the engine, with one elsewhere |
+| the rest of `/api/…` (including the live updates at `/api/v1/events`) | The engine, told who the caller is |
 | `/healthz`, `/readyz` | The engine's version and readiness |
 | `/server/healthz` | metis-server itself (204 while it runs, whatever the engine is doing) |
 | everything else | The web app |
 
-The engine does all authentication and authorization. metis-server only serves
-files and forwards requests; it holds no secrets and no database.
+### Who signs people in
+
+With the engine in this process, **metis-server signs people in**, and the
+engine is a library that trusts the caller metis-server names for it (through
+the engine's `WithIdentity` hook). metis-server keeps, in the engine's
+PostgreSQL database, tables of its own named `identity_*`:
+
+- **Passwords**, as bcrypt hashes. The engine's password column only says the
+  account signs in elsewhere.
+- **Sessions**: opaque `mss_…` tokens, stored hashed, ended at sign-out, on a
+  password change or when an administrator removes the account's app, and
+  checked against the account on every request, so a removed account is out
+  at once. They last 12 hours.
+- **Authenticator apps** and their recovery codes, sealed with the engine's
+  `ENCRYPTION_KEY`, and the five-minute step between a password and its code.
+- **Integration API keys** (`mik_…`), stored hashed.
+
+The first start copies the passwords and apps the engine already had, so
+nobody sets anything up again. The engine's columns are left as they were, so
+going back to an engine that signs people in itself still finds them.
+
+The engine still decides what each caller may do: roles, organizations and
+everything else. With an engine elsewhere (`METIS_ENGINE_URL`), that engine
+signs its own callers in, and metis-server only serves files and forwards
+requests.
 
 ### Signing in with an authenticator app
 
-A Metis engine asks staff for a second factor after their password. The web
-app carries the screens for it; the engine decides and enforces it, so a
-program that calls the engine directly cannot skip it.
+Staff are asked for a second factor after their password. metis-server
+decides and enforces it, and the engine refuses any request it has not been
+told the caller of, so a program cannot skip it by calling the engine's
+address. `METIS_TWO_FACTOR` and `METIS_DEV_MODE` work as the engine's README
+describes: required unless both say otherwise. People on the task inbox sign
+in through the engine's People sign-in and are not asked for an app.
 
 - **At sign-in**, after a correct password, the app asks for the six-digit
   code from the account's authenticator app, or one of its recovery codes.
@@ -94,23 +121,30 @@ program that calls the engine directly cannot skip it.
   lost phone: their sessions end and they set up a new one at their next
   sign-in. Nobody removes their own.
 
-Engines older than two-factor sign-in answer a password with a session, and
-the app signs in as before.
+An engine elsewhere older than two-factor sign-in answers a password with a
+session, and the app signs in as before.
+
+`metis-server --reset-password alice` and `metis-server --reset-two-factor
+alice` change metis-server's own records, and end the account's sessions.
 
 ### Programs and the Go SDK
 
 Programs use [`gsoultan/metis-sdk`](https://github.com/gsoultan/metis-sdk).
-Every call it makes is under `/api/v1`, so it works pointed at metis-server or
-at the engine directly, with the same token:
+Point it at metis-server: with the engine in metis-server's process, that is
+the only address that knows the keys and sessions.
 
 ```go
-client := metis.NewClient("https://metis.example.com", metis.WithAPIKey(key)) // no /api/v1: the client adds it
+client := metis.NewClient("https://metis.example.com", metis.WithToken(key)) // no /api/v1: the client adds it
 ```
 
 A program does not sign in with a person's password, which needs a code from
 an authenticator app. It uses its organization's integration API key
-(`mik_…`), made by an administrator of the organization, which acts there with
-the roles it was given and is never asked for a code.
+(`mik_…`), which acts there with the roles it was given and is never asked for
+a code. An administrator of the organization makes one with
+`POST /api/v1/integration-keys`, naming the organization in
+`X-Organization-ID`; the key is shown once, and only its hash is kept. A key
+never carries the administrator role, and cannot reach the organization's
+users, settings or keys.
 
 Through metis-server, the engine's `METIS_TRUSTED_PROXIES` matters for
 programs too: without it a busy program shares one rate limit with every
