@@ -14,9 +14,10 @@ import {
   Text,
   TextInput,
   Textarea,
+  Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { Download, FileCheck, MoreHorizontal, PackageCheck } from 'lucide-react';
+import { Download, FileCheck, MoreHorizontal, PackageCheck, Send } from 'lucide-react';
 import { useState } from 'react';
 
 import { PageHeader, PageShell } from '../components/layout';
@@ -35,7 +36,20 @@ import {
   runtimeLabel,
   type Release,
 } from '../domain/release';
+import { hasRole } from '../domain/access';
+import { PRIVILEGED_ROLE } from '../domain/roles';
+import {
+  deliveriesByRelease,
+  deliveryStateColor,
+  deliveryStateLabel,
+  lastSeenLabel,
+  purposeLabel,
+  sendTargets,
+  type ReleaseDelivery,
+} from '../domain/serverConnections';
 import { useReleaseActions, useReleases, useRuntime } from '../hooks/useReleases';
+import { useReleaseDeliveries, useSendRelease, useServerConnections } from '../hooks/useServerConnections';
+import { useViewerAccess } from '../hooks/useViewerAccess';
 import { useTranslation } from '../i18n/context';
 import { releaseService } from '../services/domains/releaseService';
 import { errorMessage } from '../services/shared/errors';
@@ -60,6 +74,22 @@ export function ReleaseList() {
   const projectId = useAppStore((state) => state.currentProjectId) ?? '';
   const protectedRuntime = runtime.data?.current.protected ?? true;
   const rows = releases.data ?? [];
+  // The servers after this one are a platform administrator's to read, so
+  // only they are offered "Send to"; everybody sees where releases went.
+  const isAdministrator = hasRole(useViewerAccess(), PRIVILEGED_ROLE);
+  const connections = useServerConnections(isAdministrator);
+  const targets = sendTargets(connections.data?.connections ?? []);
+  const sent = deliveriesByRelease(useReleaseDeliveries().data ?? []);
+  const send = useSendRelease();
+
+  const sendTo = async (release: string, connectionId: string, server: string) => {
+    try {
+      await send.mutateAsync({ release, connectionId });
+      notifications.show({ color: 'green', title: t('releases.send.sent', { server }), message: t('releases.send.collected', { release }) });
+    } catch (err) {
+      notifications.show({ color: 'red', title: t('releases.failed'), message: errorMessage(err), autoClose: false });
+    }
+  };
 
   const run = async (label: string, work: () => Promise<Release>) => {
     try {
@@ -162,6 +192,7 @@ export function ReleaseList() {
                           })}
                         </Text>
                       )}
+                      <SentTo deliveries={sent.get(release.name) ?? []} />
                       {release.live_note && (
                         <Badge mt={4} size="sm" variant="light" color="green" leftSection={<FileCheck size={12} />}>
                           {t('releases.liveNote.carried', { when: new Date(release.live_note.live_at).toLocaleString() })}
@@ -209,6 +240,15 @@ export function ReleaseList() {
                             </ActionIcon>
                           </Menu.Target>
                           <Menu.Dropdown>
+                            {targets.map((target) => (
+                              <Menu.Item
+                                key={target.id}
+                                leftSection={<Send size={14} />}
+                                onClick={() => void sendTo(release.name, target.id, target.name)}
+                              >
+                                {t('releases.send.to', { server: target.name })}
+                              </Menu.Item>
+                            ))}
                             {can.download && (
                               <Menu.Item
                                 leftSection={<Download size={14} />}
@@ -271,6 +311,33 @@ export function ReleaseList() {
         pending={actions.attachLiveNote.isPending}
       />
     </PageShell>
+  );
+}
+
+/**
+ * Where a release was sent, and how far it got there, as of that server's
+ * last check-in. A server that stopped checking in is shown as it was, with
+ * when it was last heard from.
+ */
+function SentTo({ deliveries }: { deliveries: ReleaseDelivery[] }) {
+  const { t } = useTranslation();
+  if (deliveries.length === 0) return null;
+  const now = new Date();
+  return (
+    <Group gap={4} mt={4}>
+      {deliveries.map((d) => {
+        const server = d.server_name || (d.server_purpose ? purposeLabel(d.server_purpose) : t('releases.send.removedServer'));
+        const seen = lastSeenLabel(d.last_seen_at, now);
+        const tip = d.detail ? `${d.detail} (${seen})` : seen;
+        return (
+          <Tooltip key={d.id} label={tip} multiline maw={360} withArrow>
+            <Badge size="sm" variant="light" color={deliveryStateColor(d.state)} leftSection={<Send size={11} />}>
+              {`${server}: ${deliveryStateLabel(d.state)}`}
+            </Badge>
+          </Tooltip>
+        );
+      })}
+    </Group>
   );
 }
 
