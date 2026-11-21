@@ -20,6 +20,7 @@ import { Route as AuthenticatedDecisionEditorRouteImport } from './routes/_authe
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated.decisions'
 import { Route as AuthenticatedDefinitionsRouteImport } from './routes/_authenticated.definitions'
 import { Route as AuthenticatedDesignerRouteImport } from './routes/_authenticated.designer'
+import { Route as AuthenticatedEnvironmentsRouteImport } from './routes/_authenticated.environments'
 import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated.groups'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated.inbox'
 import { Route as AuthenticatedInstancesRouteImport } from './routes/_authenticated.instances'
@@ -104,6 +105,14 @@ const AuthenticatedDesignerRoute = AuthenticatedDesignerRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_authenticated.designer.lazy').then((d) => d.Route),
 )
+const AuthenticatedEnvironmentsRoute =
+  AuthenticatedEnvironmentsRouteImport.update({
+    id: '/environments',
+    path: '/environments',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated.environments.lazy').then((d) => d.Route),
+  )
 const AuthenticatedGroupsRoute = AuthenticatedGroupsRouteImport.update({
   id: '/groups',
   path: '/groups',
@@ -229,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/definitions': typeof AuthenticatedDefinitionsRoute
   '/designer': typeof AuthenticatedDesignerRoute
+  '/environments': typeof AuthenticatedEnvironmentsRoute
   '/groups': typeof AuthenticatedGroupsRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/instances': typeof AuthenticatedInstancesRoute
@@ -257,6 +267,7 @@ export interface FileRoutesByTo {
   '/decisions': typeof AuthenticatedDecisionsRoute
   '/definitions': typeof AuthenticatedDefinitionsRoute
   '/designer': typeof AuthenticatedDesignerRoute
+  '/environments': typeof AuthenticatedEnvironmentsRoute
   '/groups': typeof AuthenticatedGroupsRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/instances': typeof AuthenticatedInstancesRoute
@@ -288,6 +299,7 @@ export interface FileRoutesById {
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/definitions': typeof AuthenticatedDefinitionsRoute
   '/_authenticated/designer': typeof AuthenticatedDesignerRoute
+  '/_authenticated/environments': typeof AuthenticatedEnvironmentsRoute
   '/_authenticated/groups': typeof AuthenticatedGroupsRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/instances': typeof AuthenticatedInstancesRoute
@@ -320,6 +332,7 @@ export interface FileRouteTypes {
     | '/decisions'
     | '/definitions'
     | '/designer'
+    | '/environments'
     | '/groups'
     | '/inbox'
     | '/instances'
@@ -348,6 +361,7 @@ export interface FileRouteTypes {
     | '/decisions'
     | '/definitions'
     | '/designer'
+    | '/environments'
     | '/groups'
     | '/inbox'
     | '/instances'
@@ -378,6 +392,7 @@ export interface FileRouteTypes {
     | '/_authenticated/decisions'
     | '/_authenticated/definitions'
     | '/_authenticated/designer'
+    | '/_authenticated/environments'
     | '/_authenticated/groups'
     | '/_authenticated/inbox'
     | '/_authenticated/instances'
@@ -483,6 +498,13 @@ declare module '@tanstack/react-router' {
       path: '/designer'
       fullPath: '/designer'
       preLoaderRoute: typeof AuthenticatedDesignerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/environments': {
+      id: '/_authenticated/environments'
+      path: '/environments'
+      fullPath: '/environments'
+      preLoaderRoute: typeof AuthenticatedEnvironmentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/groups': {
@@ -615,6 +637,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
   AuthenticatedDefinitionsRoute: typeof AuthenticatedDefinitionsRoute
   AuthenticatedDesignerRoute: typeof AuthenticatedDesignerRoute
+  AuthenticatedEnvironmentsRoute: typeof AuthenticatedEnvironmentsRoute
   AuthenticatedGroupsRoute: typeof AuthenticatedGroupsRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedInstancesRoute: typeof AuthenticatedInstancesRoute
@@ -641,6 +664,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
   AuthenticatedDefinitionsRoute: AuthenticatedDefinitionsRoute,
   AuthenticatedDesignerRoute: AuthenticatedDesignerRoute,
+  AuthenticatedEnvironmentsRoute: AuthenticatedEnvironmentsRoute,
   AuthenticatedGroupsRoute: AuthenticatedGroupsRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedInstancesRoute: AuthenticatedInstancesRoute,

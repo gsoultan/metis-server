@@ -12,6 +12,7 @@ import {
   FolderGit2,
   LayoutGrid,
   Network,
+  Server,
   Play,
   ScrollText,
   ShieldCheck,
@@ -140,6 +141,13 @@ const sections: NavSection[] = [
         label: 'nav.audit',
         to: '/audit',
         hint: 'Who did what across this organization',
+        adminOnly: true,
+      },
+      {
+        icon: Server,
+        label: 'nav.environments',
+        to: '/environments',
+        hint: 'Development, Staging and Production, and the releases sent between them',
         adminOnly: true,
       },
       {
