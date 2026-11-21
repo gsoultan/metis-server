@@ -66,10 +66,10 @@ archives:
 # to run as. deb and rpm cover Debian, Ubuntu, RHEL, Fedora, Rocky and SUSE;
 # apk is Alpine (OpenRC, not systemd); archlinux is Arch and its derivatives.
 #
-# The packages install and stop there, as the engine's do. They do not enable,
-# start or restart the service: on a fresh host that opens the setup wizard on
-# the network, which is the operator's call, and an upgrade carries the
-# engine's schema migrations, so it waits for a backup and a restart.
+# A fresh install enables the service and starts it, so it comes back on every
+# boot and serves the setup wizard straight away. An upgrade enables, starts
+# and restarts nothing: it carries the engine's schema migrations, so it waits
+# for a backup and a restart, and a service the operator disabled stays off.
 nfpms:
   - id: metis-server
     package_name: metis-server
@@ -222,7 +222,7 @@ release:
       --certificate-oidc-issuer https://token.actions.githubusercontent.com
     ```
 
-    A package installs the service without starting it: run
-    `systemctl enable --now metis-server`, then open
+    A fresh install enables and starts the service: open
     `http://<server>:8080/setup` and choose the database there, with the
-    setup token from `journalctl -u metis-server`.
+    setup token from `journalctl -u metis-server`. An upgrade does not
+    restart it: take a backup, then `systemctl restart metis-server`.

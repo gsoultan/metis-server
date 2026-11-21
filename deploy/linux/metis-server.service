@@ -1,11 +1,11 @@
 # systemd unit for the metis-server Linux packages (deb, rpm, Arch).
 #
 # metis-server is the whole of Metis on one machine: the web app, sign-in, and
-# the engine in its own process. The package installs this and stops there: it
-# does not enable or start the service, because starting it opens the setup
-# wizard on the network. When you are ready:
+# the engine in its own process. A fresh install of the package enables and
+# starts this; an upgrade leaves it as it was (see scripts/postinstall.sh).
+# To keep it from starting at boot:
 #
-#   systemctl enable --now metis-server
+#   systemctl disable --now metis-server
 #
 # With no DATABASE_URL in /etc/metis-server/metis-server.env it serves only the
 # setup wizard, at http://<this server>:8080/setup, which chooses the database.

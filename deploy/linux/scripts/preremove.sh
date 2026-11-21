@@ -11,6 +11,9 @@ case "$1" in
     remove|purge|0|"")
         if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
             systemctl disable --now metis-server.service >/dev/null 2>&1 || true
+        elif command -v rc-update >/dev/null 2>&1; then
+            rc-service metis-server stop >/dev/null 2>&1 || true
+            rc-update del metis-server default >/dev/null 2>&1 || true
         fi
         ;;
 esac

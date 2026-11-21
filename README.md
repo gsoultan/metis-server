@@ -171,20 +171,20 @@ the engine in its process, a hardened systemd unit (OpenRC on Alpine), a
 setup wizard's `config.yaml` lands there), and
 `/etc/metis-server/metis-server.env` for its settings and secrets, which the
 package manager keeps across upgrades. It needs a PostgreSQL, on this host or
-another. It does not start the service:
+another. A fresh install enables the service at boot and starts it
+(`systemctl disable --now metis-server` turns that off):
 
 ```bash
 sudo apt-get install ./metis-server_<version>_amd64.deb
-sudo systemctl enable --now metis-server
 # open http://<server>:8080/setup and choose the database there;
 # the setup token is in: journalctl -u metis-server | grep "setup token"
 ```
 
-Or set `DATABASE_URL`, `JWT_SECRET` and `ENCRYPTION_KEY` in the env file
-before starting it, and `METIS_ROLE` for a `web` or `worker` machine. After an
-upgrade, take a backup, then `systemctl restart metis-server`; the package
-never restarts it. The packages are built by `.goreleaser.yaml`, which builds
-the UI first, and CI installs them on Debian, Rocky, Alpine and Arch and boots
+Or set `DATABASE_URL`, `JWT_SECRET` and `ENCRYPTION_KEY` in the env file and
+restart it, and `METIS_ROLE` for a `web` or `worker` machine. After an
+upgrade, take a backup, then `systemctl restart metis-server`; an upgrade
+never restarts it, and never re-enables a service you disabled. The packages are built by
+`.goreleaser.yaml`, which builds the UI first, and CI installs them on Debian, Rocky, Alpine and Arch and boots
 the deb under systemd against PostgreSQL on every pull request.
 
 ## Developing the UI

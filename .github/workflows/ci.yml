@@ -389,7 +389,7 @@ jobs:
           run rockylinux/rockylinux:9 \
             "rpm -i /d/*.x86_64.rpm; sh /check.sh; test -f /usr/lib/systemd/system/metis-server.service; rpm -e metis-server"
           run alpine:3.22 \
-            "apk add --allow-untrusted /d/*_x86_64.apk; sh /check.sh; test -x /etc/init.d/metis-server; apk del metis-server"
+            "apk add openrc; apk add --allow-untrusted /d/*_x86_64.apk; sh /check.sh; test -x /etc/init.d/metis-server; rc-update show default | grep -q metis-server; apk del metis-server; if rc-update show default | grep -q metis-server; then exit 1; fi"
           run archlinux:latest \
             "pacman -U --noconfirm /d/*-x86_64.pkg.tar.zst; sh /check.sh; test -f /usr/lib/systemd/system/metis-server.service; pacman -R --noconfirm metis-server"
 
@@ -403,18 +403,35 @@ jobs:
           set -euo pipefail
           sudo apt-get install -y ./dist/*_amd64.deb
           sudo systemd-analyze verify metis-server.service
+          # A fresh install enables and starts it, with no database yet: the
+          # setup wizard.
+          systemctl is-enabled metis-server
+          for i in $(seq 1 30); do
+            curl -fsS -o /dev/null localhost:8080/api/v1/setup/status 2>/dev/null && break
+            test "$i" != 30 || { echo "::error::the service did not start on install"; sudo journalctl -u metis-server --no-pager | tail -50; exit 1; }
+            sleep 1
+          done
+          echo "serving the setup wizard after install"
           sudo tee -a /etc/metis-server/metis-server.env >/dev/null <<ENV
           DATABASE_URL="postgres://metis:metis@127.0.0.1:5432/metis?sslmode=disable"
           ENCRYPTION_KEY="$(openssl rand -hex 24)"
           JWT_SECRET="$(openssl rand -base64 48 | tr -d '\n')"
           ENV
-          sudo systemctl start metis-server
+          sudo systemctl restart metis-server
           for i in $(seq 1 90); do
             if curl -fsS -o /dev/null localhost:8080/readyz 2>/dev/null; then
               echo "ready after ${i}s"
               curl -fsS localhost:8080/healthz; echo
               curl -fsS -o /dev/null -w 'server/healthz %{http_code}\n' localhost:8080/server/healthz
               curl -fsS localhost:8080/ | grep -q '<title>Metis BPM</title>'
+              # An upgrade leaves a disabled service disabled: reinstalling
+              # runs the deb's upgrade path ("configure" with an old version).
+              sudo systemctl disable --now metis-server
+              sudo apt-get install -y --reinstall ./dist/*_amd64.deb
+              if systemctl is-enabled --quiet metis-server || systemctl is-active --quiet metis-server; then
+                echo "::error::an upgrade turned a disabled service back on"; exit 1
+              fi
+              echo "an upgrade left the disabled service off"
               exit 0
             fi
             if systemctl is-failed --quiet metis-server; then
