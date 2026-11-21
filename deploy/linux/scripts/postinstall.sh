@@ -1,14 +1,27 @@
 #!/bin/sh
-# Reload systemd so it sees the unit. Deliberately does not enable, start or
-# restart the service:
+# Reload systemd so it sees the unit, and on a fresh install enable and start
+# the service, so it is running now and comes back on every boot:
 #
-# - On a fresh install starting it is the operator's call: it serves the
-#   setup wizard to anyone who can reach the port (behind the setup token in
-#   the log), and they may want a firewall or an address chosen first.
-# - On an upgrade the new binary carries the engine and may carry schema
-#   migrations, so take a backup before the first start of a new release. The
-#   running server keeps running the old binary until you restart it yourself.
+# - A fresh install with no DATABASE_URL serves the setup wizard on :8080,
+#   behind the one-time setup token in the log, so the first thing to do is
+#   open http://<this server>:8080/setup.
+# - An upgrade enables, starts and restarts nothing. The new binary carries
+#   the engine and may carry schema migrations, so take a backup before the
+#   first start of a new release; the running server keeps running the old
+#   binary until you restart it yourself. Nor is a service the operator
+#   disabled turned back on.
+#
+# How each format says "upgrade": deb passes "configure" and the old version,
+# rpm passes the number of versions installed (2 or more). apk and Arch run
+# this script on a fresh install only (an upgrade has its own hook, which this
+# package does not use) and pass the new version.
 set -e
+
+fresh_install=true
+case "$1" in
+    configure) [ -z "${2:-}" ] || fresh_install=false ;;
+    [2-9]|[1-9][0-9]) fresh_install=false ;;
+esac
 
 # The package declares these owners, but pacman unpacks by numeric id, and the
 # metis-server account's id is only known on this host, so on Arch they come
@@ -23,15 +36,33 @@ chmod 0750 /var/lib/metis-server
 
 if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
     systemctl daemon-reload >/dev/null 2>&1 || true
+    if [ "$fresh_install" = true ]; then
+        systemctl enable --now metis-server.service >/dev/null 2>&1 || true
+    fi
+elif command -v rc-update >/dev/null 2>&1; then
+    # OpenRC (Alpine). Added to the default runlevel even where OpenRC is not
+    # running, such as a container being built, so it starts on the next
+    # boot; started now only where it is.
+    if [ "$fresh_install" = true ]; then
+        rc-update add metis-server default >/dev/null 2>&1 || true
+        rc-service metis-server start >/dev/null 2>&1 || true
+    fi
 fi
 
-cat <<'MSG'
-metis-server is installed. To run it:
-  1. systemctl enable --now metis-server
-  2. open http://<this server>:8080/setup and choose the database there;
-     the setup token is in: journalctl -u metis-server | grep "setup token"
-  (or set DATABASE_URL and the secrets in /etc/metis-server/metis-server.env first)
-After an upgrade, take a backup, then: systemctl restart metis-server
+if [ "$fresh_install" = true ]; then
+    cat <<'MSG'
+metis-server is installed, enabled at boot and started. Next:
+  open http://<this server>:8080/setup and choose the database there;
+  the setup token is in: journalctl -u metis-server | grep "setup token"
+  (on Alpine: /var/log/metis-server/metis-server.log)
+Or set DATABASE_URL and the secrets in /etc/metis-server/metis-server.env,
+then: systemctl restart metis-server
 MSG
+else
+    cat <<'MSG'
+metis-server is upgraded. The running server still runs the old binary:
+take a backup, then: systemctl restart metis-server
+MSG
+fi
 
 exit 0

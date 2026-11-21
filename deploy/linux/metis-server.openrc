@@ -1,11 +1,12 @@
 #!/sbin/openrc-run
 # OpenRC service for the metis-server apk package (Alpine has no systemd).
 #
-# Like the systemd unit, the package installs this without adding it to a
-# runlevel. Fill in /etc/metis-server/metis-server.env, or leave DATABASE_URL
-# unset to choose the database in the setup wizard, then:
+# Like the systemd unit, a fresh install adds this to the default runlevel and
+# starts it; an upgrade leaves it as it was. With DATABASE_URL unset in
+# /etc/metis-server/metis-server.env it serves the setup wizard. To keep it
+# from starting at boot:
 #
-#   rc-update add metis-server default && rc-service metis-server start
+#   rc-update del metis-server default
 
 name="metis-server"
 description="Metis BPM (web app and BPMN/DMN engine)"
