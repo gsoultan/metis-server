@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { firstSetupStep, listenAddressError, publicURLError, signInAddress, SETUP_STEPS, setupRequestFor } from './setupWizard';
+import {
+  firstSetupStep,
+  listenAddressError,
+  publicURLError,
+  serverNameError,
+  signInAddress,
+  SETUP_STEPS,
+  setupRequestFor,
+} from './setupWizard';
 import type { SetupRequest } from '../services/types';
 
 const everything: SetupRequest = {
@@ -22,6 +30,8 @@ const everything: SetupRequest = {
   setup_token: 'the-token-from-the-log',
   http_address: '0.0.0.0:8080',
   public_url: 'https://metis.example.com',
+  server_purpose: 'production',
+  server_name: 'Production (Jakarta)',
 };
 
 describe('firstSetupStep', () => {
@@ -107,5 +117,17 @@ describe('signInAddress', () => {
 
   test('follows the server to its new port', () => {
     expect(signInAddress(here, ':9000', '')).toBe('http://10.0.0.5:9000/login');
+  });
+});
+
+describe('serverNameError', () => {
+  test('takes an empty name, which is the purpose, and a one-line one', () => {
+    expect(serverNameError('')).toBeNull();
+    expect(serverNameError('  Production (Jakarta) ')).toBeNull();
+  });
+
+  test('refuses a name the server would refuse', () => {
+    expect(serverNameError('two\nlines')).not.toBeNull();
+    expect(serverNameError('x'.repeat(256))).not.toBeNull();
   });
 });
