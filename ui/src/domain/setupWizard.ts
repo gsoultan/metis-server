@@ -81,6 +81,19 @@ export function listenAddressError(address: string): string | null {
   return null;
 }
 
+/**
+ * What is wrong with a server's name, or null when the server will take it:
+ * one line of at most 255 characters, the same rule the server applies.
+ * Empty is allowed and names the server after its purpose.
+ */
+export function serverNameError(name: string): string | null {
+  const value = name.trim();
+  if (value.length > 255) return 'Keep the name to 255 characters';
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(value)) return 'The name must be one line';
+  return null;
+}
+
 /** What is wrong with a public address, or null when it is usable or empty. */
 export function publicURLError(publicURL: string): string | null {
   const value = publicURL.trim();

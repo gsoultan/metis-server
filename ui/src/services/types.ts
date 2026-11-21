@@ -681,6 +681,13 @@ export interface SetupRequest {
   http_address: string;
   /** The address people reach the server at, for links in e-mails. Optional. */
   public_url: string;
+  /**
+   * What this server is for: which servers it may take releases from. Empty
+   * is development. Written to config.yaml; the environment still wins.
+   */
+  server_purpose: '' | 'development' | 'staging' | 'production';
+  /** What the servers it exchanges releases with call it. Empty is its purpose. */
+  server_name: string;
 }
 
 

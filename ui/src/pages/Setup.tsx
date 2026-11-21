@@ -20,6 +20,8 @@ import {
   Tooltip,
   CopyButton,
   Progress,
+  Radio,
+  SimpleGrid,
   useMantineTheme,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -45,7 +47,15 @@ import { processService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 import { MIN_PASSWORD_LENGTH, randomString } from '../domain/password';
 import { NewPasswordInput } from '../components/password/NewPasswordInput';
-import { firstSetupStep, listenAddressError, publicURLError, SETUP_STEPS, setupRequestFor } from '../domain/setupWizard';
+import {
+  firstSetupStep,
+  listenAddressError,
+  publicURLError,
+  serverNameError,
+  SETUP_STEPS,
+  setupRequestFor,
+} from '../domain/setupWizard';
+import type { SetupRequest } from '../services/types';
 import { setupService } from '../services/domains/setupService';
 import { errorMessage } from '../services/shared/errors';
 import { SetupComplete } from '../components/setup/SetupComplete';
@@ -88,6 +98,17 @@ function getStrengthLabel(strength: number): string {
   if (strength < 40) return 'Weak';
   if (strength < 70) return 'Moderate';
   return 'Strong';
+}
+
+/** The three answers to "What is this server for?", in the order releases travel. */
+const SERVER_PURPOSES: { value: Exclude<SetupRequest['server_purpose'], ''>; label: string; description: string }[] = [
+  { value: 'development', label: 'Development', description: 'Where processes and decisions are designed and tried out.' },
+  { value: 'staging', label: 'Staging', description: 'Optional. Takes releases from Development to test them first.' },
+  { value: 'production', label: 'Production', description: 'Runs the real work. Takes releases from Staging or Development.' },
+];
+
+function purposeName(purpose: SetupRequest['server_purpose']): string {
+  return SERVER_PURPOSES.find((p) => p.value === purpose)?.label ?? 'Development';
 }
 
 export function Setup({ onComplete }: { onComplete: () => void }) {
@@ -142,6 +163,8 @@ export function Setup({ onComplete }: { onComplete: () => void }) {
       // Where this page was opened is the best first guess at where people
       // will reach the server; the operator corrects it behind a proxy.
       public_url: typeof window === 'undefined' ? '' : window.location.origin,
+      server_purpose: 'development' as SetupRequest['server_purpose'],
+      server_name: '',
     },
     validate: (values) => {
       // Asked on whichever step comes first: nothing the wizard does is
@@ -181,6 +204,7 @@ export function Setup({ onComplete }: { onComplete: () => void }) {
         return {
           http_address: listenAddressError(values.http_address),
           public_url: publicURLError(values.public_url),
+          server_name: serverNameError(values.server_name),
         };
       }
       if (step === SETUP_STEPS.administrator) {
@@ -504,7 +528,7 @@ export function Setup({ onComplete }: { onComplete: () => void }) {
               {/* Step 2: Server */}
               <Stepper.Step
                 label="Server"
-                description={fromEnvironment ? 'Set by the environment' : 'Address'}
+                description={fromEnvironment ? 'Set by the environment' : 'Address and purpose'}
                 icon={<Globe size={18} />}
               >
                 <Stack gap="md" mt="xl">
@@ -525,6 +549,34 @@ export function Setup({ onComplete }: { onComplete: () => void }) {
                     placeholder="https://metis.example.com"
                     description="The address people open in a browser. Links in e-mails point here; leave empty to send no links."
                     {...form.getInputProps('public_url')}
+                  />
+                  <Radio.Group
+                    label="What is this server for?"
+                    description="Releases go forwards only: Production takes them from Staging or straight from Development, Staging from Development. Each server has its own address and database."
+                    value={form.values.server_purpose || 'development'}
+                    onChange={(value) => form.setFieldValue('server_purpose', value as SetupRequest['server_purpose'])}
+                  >
+                    <SimpleGrid cols={{ base: 1, sm: 3 }} mt="xs">
+                      {SERVER_PURPOSES.map((p) => (
+                        <Radio.Card key={p.value} value={p.value} p="md" radius="md" withBorder>
+                          <Group wrap="nowrap" align="flex-start">
+                            <Radio.Indicator />
+                            <div>
+                              <Text fw={600}>{p.label}</Text>
+                              <Text size="xs" c="dimmed">
+                                {p.description}
+                              </Text>
+                            </div>
+                          </Group>
+                        </Radio.Card>
+                      ))}
+                    </SimpleGrid>
+                  </Radio.Group>
+                  <TextInput
+                    label="Server name"
+                    placeholder={purposeName(form.values.server_purpose)}
+                    description="What the other servers call this one, such as Production (Jakarta). Leave empty to use its purpose."
+                    {...form.getInputProps('server_name')}
                   />
                   {wizardOnly && (
                     <Alert variant="light" color="blue" icon={<Globe size={16} />}>
