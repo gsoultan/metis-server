@@ -139,6 +139,9 @@ info "Starting the engine on :$E2E_ENGINE_PORT"
   # The suite signs in with a password alone. An engine that requires staff
   # to use an authenticator app honours "optional" only in development mode.
   export METIS_DEV_MODE=true METIS_TWO_FACTOR=optional
+  # The engine ships with script tasks switched off, and the sample's expense
+  # approval has one (auto-approve), which the designer tests open.
+  export METIS_FEATURE_SCRIPT_TASKS=true
   exec ./metis
 ) >"$WORK/engine.log" 2>&1 &
 ENGINE_PID=$!
