@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Network,
   Server,
+  ServerCog,
   Play,
   ScrollText,
   ShieldCheck,
@@ -148,6 +149,13 @@ const sections: NavSection[] = [
         label: 'nav.environments',
         to: '/environments',
         hint: 'Development, Staging and Production, and the releases sent between them',
+        adminOnly: true,
+      },
+      {
+        icon: ServerCog,
+        label: 'nav.servers',
+        to: '/servers',
+        hint: 'The machines running this server, and what each runs',
         adminOnly: true,
       },
       {

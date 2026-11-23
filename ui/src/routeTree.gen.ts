@@ -31,6 +31,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated.projects'
 import { Route as AuthenticatedReleasesRouteImport } from './routes/_authenticated.releases'
 import { Route as AuthenticatedSdkRouteImport } from './routes/_authenticated.sdk'
+import { Route as AuthenticatedServersRouteImport } from './routes/_authenticated.servers'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated.tasks'
 import { Route as AuthenticatedUpgradesRouteImport } from './routes/_authenticated.upgrades'
@@ -180,6 +181,13 @@ const AuthenticatedSdkRoute = AuthenticatedSdkRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_authenticated.sdk.lazy').then((d) => d.Route),
 )
+const AuthenticatedServersRoute = AuthenticatedServersRouteImport.update({
+  id: '/servers',
+  path: '/servers',
+  getParentRoute: () => AuthenticatedRoute,
+} as any).lazy(() =>
+  import('./routes/_authenticated.servers.lazy').then((d) => d.Route),
+)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -249,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRoute
   '/releases': typeof AuthenticatedReleasesRoute
   '/sdk': typeof AuthenticatedSdkRoute
+  '/servers': typeof AuthenticatedServersRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/upgrades': typeof AuthenticatedUpgradesRoute
@@ -278,6 +287,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/releases': typeof AuthenticatedReleasesRoute
   '/sdk': typeof AuthenticatedSdkRoute
+  '/servers': typeof AuthenticatedServersRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/upgrades': typeof AuthenticatedUpgradesRoute
@@ -310,6 +320,7 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/releases': typeof AuthenticatedReleasesRoute
   '/_authenticated/sdk': typeof AuthenticatedSdkRoute
+  '/_authenticated/servers': typeof AuthenticatedServersRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/upgrades': typeof AuthenticatedUpgradesRoute
@@ -343,6 +354,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/releases'
     | '/sdk'
+    | '/servers'
     | '/settings'
     | '/tasks'
     | '/upgrades'
@@ -372,6 +384,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/releases'
     | '/sdk'
+    | '/servers'
     | '/settings'
     | '/tasks'
     | '/upgrades'
@@ -403,6 +416,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/releases'
     | '/_authenticated/sdk'
+    | '/_authenticated/servers'
     | '/_authenticated/settings'
     | '/_authenticated/tasks'
     | '/_authenticated/upgrades'
@@ -577,6 +591,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSdkRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/servers': {
+      id: '/_authenticated/servers'
+      path: '/servers'
+      fullPath: '/servers'
+      preLoaderRoute: typeof AuthenticatedServersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -648,6 +669,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedReleasesRoute: typeof AuthenticatedReleasesRoute
   AuthenticatedSdkRoute: typeof AuthenticatedSdkRoute
+  AuthenticatedServersRoute: typeof AuthenticatedServersRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedUpgradesRoute: typeof AuthenticatedUpgradesRoute
@@ -675,6 +697,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedReleasesRoute: AuthenticatedReleasesRoute,
   AuthenticatedSdkRoute: AuthenticatedSdkRoute,
+  AuthenticatedServersRoute: AuthenticatedServersRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedUpgradesRoute: AuthenticatedUpgradesRoute,
