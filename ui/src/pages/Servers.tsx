@@ -1,8 +1,12 @@
-import { ActionIcon, Alert, Badge, Code, Group, Paper, Stack, Table, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Alert, Badge, Button, Code, Group, Paper, Stack, Table, Text, Tooltip } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { CircleAlert, Trash2 } from 'lucide-react';
+import { CircleAlert, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 import { PageHeader } from '../components/PageHeader';
+import { AddServerDialog } from '../components/servers/AddServerDialog';
+import { WaitingMachines } from '../components/servers/WaitingMachines';
+import { waitingJoins } from '../domain/machineJoins';
 import {
   durationLabel,
   machineStatus,
@@ -13,7 +17,7 @@ import {
   statusColor,
   type Machine,
 } from '../domain/machines';
-import { useForgetMachine, useMachines } from '../hooks/useMachines';
+import { useForgetMachine, useMachineJoins, useMachines } from '../hooks/useMachines';
 import { useTranslation } from '../i18n/context';
 
 /**
@@ -28,6 +32,9 @@ export function Servers() {
   const forget = useForgetMachine();
   const machines = data?.machines ?? [];
   const now = data?.now ?? new Date();
+  const joins = useMachineJoins();
+  const waiting = waitingJoins(joins.data?.joins ?? []);
+  const [adding, setAdding] = useState(false);
 
   const remove = async (m: Machine) => {
     try {
@@ -45,7 +52,18 @@ export function Servers() {
 
   return (
     <Stack gap="xl">
-      <PageHeader title={t('page.servers.title')} description={t('page.servers.subtitle')} />
+      <PageHeader
+        title={t('page.servers.title')}
+        description={t('page.servers.subtitle')}
+        actions={
+          <Button leftSection={<Plus size={16} />} onClick={() => setAdding(true)}>
+            {t('servers.add.button')}
+          </Button>
+        }
+      />
+      <AddServerDialog opened={adding} onClose={() => setAdding(false)} />
+
+      {waiting.length > 0 && <WaitingMachines joins={waiting} now={joins.data?.now ?? now} />}
 
       {error !== null && (
         <Alert color="red" icon={<CircleAlert size={18} />} title={t('servers.unreadable')}>
