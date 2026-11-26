@@ -16,24 +16,8 @@
  * And each one can be tried with a pasted delivery before the partner sends a
  * real one — see SimulateDelivery.
  */
-import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Code,
-  CopyButton,
-  Group,
-  Modal,
-  Stack,
-  Switch,
-  Table,
-  Text,
-  TextInput,
-  Title,
-  Tooltip,
-} from '@mantine/core';
+import { ActionIcon, Alert, Badge, Button, Code, CopyButton, Group, Modal, Stack, Switch, Table, Text, TextInput, Tooltip } from '@mantine/core';
+import { SectionFrame } from './layout/SectionFrame';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { AlertTriangle, Check, Copy, FlaskConical, Plus, Trash2, Webhook } from 'lucide-react';
@@ -46,7 +30,7 @@ import { LegacySigningNotice } from './webhooks/LegacySigningNotice';
 import { SimulateDelivery } from './webhooks/SimulateDelivery';
 import { WebhookSigningHelp } from './webhooks/WebhookSigningHelp';
 
-export function WebhookSettings() {
+export function WebhookSettings({ asPage = false }: { asPage?: boolean } = {}) {
   const { data } = useWebhooks();
   const create = useCreateWebhook();
   const setEnabled = useSetWebhookEnabled();
@@ -98,23 +82,20 @@ export function WebhookSettings() {
   };
 
   return (
-    <Card withBorder radius="lg" p="xl">
+    <SectionFrame
+      asPage={asPage}
+      title="Incoming webhooks"
+      description="Addresses a partner posts to when something happens at their end. Each delivery becomes a message your processes can wait for."
+      icon={<Webhook size={18} />}
+      action={
+        <>
+        <Button size="xs" leftSection={<Plus size={14} />} onClick={form.open}>
+          Add a webhook
+        </Button>
+        </>
+      }
+    >
       <Stack gap="lg">
-        <Group justify="space-between" align="flex-start">
-          <div>
-            <Group gap="xs">
-              <Webhook size={18} />
-              <Title order={4}>Incoming webhooks</Title>
-            </Group>
-            <Text size="xs" c="dimmed">
-              Addresses a partner posts to when something happens at their end. Each delivery becomes a message your
-              processes can wait for.
-            </Text>
-          </div>
-          <Button size="xs" leftSection={<Plus size={14} />} onClick={form.open}>
-            Add a webhook
-          </Button>
-        </Group>
 
         {webhooks.length === 0 ? (
           <Text size="sm" c="dimmed">
@@ -232,7 +213,7 @@ export function WebhookSettings() {
             onChange={(event) => setCorrelation(event.currentTarget.value)}
           />
           <Group justify="flex-end">
-            <Button variant="subtle" color="gray" onClick={form.close}>
+            <Button variant="default" onClick={form.close}>
               Cancel
             </Button>
             <Button onClick={submit} loading={create.isPending} disabled={!messageName.trim()}>
@@ -264,7 +245,7 @@ export function WebhookSettings() {
           </Stack>
         )}
       </Modal>
-    </Card>
+    </SectionFrame>
   );
 }
 

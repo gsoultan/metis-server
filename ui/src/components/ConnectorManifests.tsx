@@ -12,24 +12,8 @@
  * implementation, not theirs. Pasting an OpenAPI specification installs one
  * connector per operation.
  */
-import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Code,
-  Group,
-  Modal,
-  SegmentedControl,
-  Stack,
-  Switch,
-  Table,
-  Text,
-  Textarea,
-  Title,
-  Tooltip,
-} from '@mantine/core';
+import { ActionIcon, Alert, Badge, Button, Code, Group, Modal, SegmentedControl, Stack, Switch, Table, Text, Textarea, Tooltip } from '@mantine/core';
+import { SectionFrame } from './layout/SectionFrame';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { FileCode, Plus, Trash2 } from 'lucide-react';
@@ -63,7 +47,7 @@ errors:
     retryable: true
     retry_after: "headers['Retry-After']"`;
 
-export function ConnectorManifests() {
+export function ConnectorManifests({ asPage = false }: { asPage?: boolean } = {}) {
   const { data: manifests } = useConnectorManifests();
   const install = useInstallConnectorManifest();
   const setEnabled = useSetConnectorManifestEnabled();
@@ -119,23 +103,20 @@ export function ConnectorManifests() {
   };
 
   return (
-    <Card withBorder radius="lg" p="xl">
+    <SectionFrame
+      asPage={asPage}
+      title="Connectors from a document"
+      description="A connector described by a manifest, or imported from an API specification, joins the catalogue below, where a project connects it and a step can choose it. No redeploy."
+      icon={<FileCode size={18} />}
+      action={
+        <>
+        <Button size="xs" leftSection={<Plus size={14} />} onClick={modal.open}>
+          Install
+        </Button>
+        </>
+      }
+    >
       <Stack gap="lg">
-        <Group justify="space-between" align="flex-start">
-          <div>
-            <Group gap="xs">
-              <FileCode size={18} />
-              <Title order={4}>Connectors from a document</Title>
-            </Group>
-            <Text size="xs" c="dimmed">
-              A connector described by a manifest, or imported from an API specification, joins the catalogue below,
-              where a project connects it and a step can choose it. No redeploy.
-            </Text>
-          </div>
-          <Button size="xs" leftSection={<Plus size={14} />} onClick={modal.open}>
-            Install
-          </Button>
-        </Group>
 
         {installed.length === 0 ? (
           <Text size="sm" c="dimmed">
@@ -235,7 +216,7 @@ export function ConnectorManifests() {
               </Button>
             )}
             <Group ml="auto">
-              <Button variant="subtle" color="gray" onClick={modal.close}>
+              <Button variant="default" onClick={modal.close}>
                 Cancel
               </Button>
               <Button onClick={submit} loading={install.isPending} disabled={!document.trim()}>
@@ -245,6 +226,6 @@ export function ConnectorManifests() {
           </Group>
         </Stack>
       </Modal>
-    </Card>
+    </SectionFrame>
   );
 }

@@ -28,6 +28,14 @@ import (
 // version is stamped at build time with -ldflags "-X main.version=...".
 var version = "dev"
 
+// The package and repository metis-server is published as. The engine in this
+// process reports version as its own, compares it with this repository's
+// releases, and upgrades this package, not the metis command's.
+const (
+	packageName = "metis-server"
+	repository  = "gsoultan/metis-server"
+)
+
 // shutdownTimeout is how long requests in flight get to finish on SIGTERM.
 const shutdownTimeout = 20 * time.Second
 
@@ -46,7 +54,7 @@ func run() error {
 	// `upgrade`, run against this installation's database and exit without
 	// serving anything.
 	if args := os.Args[1:]; len(args) > 0 {
-		return engine.New(withIdentity(nil)).Run(ctx, args)
+		return engine.New(withBuild(), withIdentity(nil)).Run(ctx, args)
 	}
 
 	cfg, err := config.FromEnv()
@@ -88,7 +96,7 @@ func run() error {
 			return err
 		}
 		go func() {
-			engineDone <- engine.New(withIdentity(front)).Run(ctx, nil)
+			engineDone <- engine.New(withBuild(), withIdentity(front)).Run(ctx, nil)
 		}()
 	}
 
@@ -135,6 +143,11 @@ func run() error {
 		}
 	}
 	return result
+}
+
+// withBuild names this build to the engine; see the constants above.
+func withBuild() engine.Option {
+	return engine.WithBuild(engine.Build{Version: version, Name: packageName, Repository: repository})
 }
 
 // withIdentity hands the engine's signing in to metis-server's identity, and

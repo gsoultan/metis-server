@@ -1,17 +1,12 @@
 import {
   Badge,
-  Box,
   Button,
   Card,
-  Divider,
   Group,
-  Paper,
   SimpleGrid,
   Stack,
   Text,
   TextInput,
-  ThemeIcon,
-  Title,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
@@ -43,13 +38,29 @@ import {
 import { errorMessage } from '../services/shared/errors';
 import type { ApiConnector, ApiConnectorInstance, CreateConnectorPayload } from '../services/types';
 import { useAppStore } from '../store/useAppStore';
-import { useTranslation } from '../i18n/context';
+import type { ConnectorSection } from '../routes/_authenticated.connectors';
+import { SegmentedControl } from '@mantine/core';
+import classes from './Connectors.module.css';
 
 const DEFAULT_TEST_PAYLOAD = '{\n  "text": "Hello from Metis!"\n}';
 const CONFIGURATION_STEP = 1;
 
-export function Connectors() {
-  const { t } = useTranslation();
+/** What each connector page is for, under its title. */
+const SECTION_COPY: Record<ConnectorSection, { title: string; description: string }> = {
+  catalogue: {
+    title: 'Catalogue',
+    description: 'Services this project can connect to. Connect one once, then any step can use it.',
+  },
+  connections: {
+    title: 'My connections',
+    description: "This project's connections, each with its own name and settings. A step picks one by name.",
+  },
+  documents: { title: 'Connectors from a document', description: '' },
+  outgoing: { title: 'Outgoing webhooks', description: '' },
+  incoming: { title: 'Incoming webhooks', description: '' },
+};
+
+export function Connectors({ section = 'catalogue' }: { section?: ConnectorSection }) {
   const { currentProjectId, expertMode } = useAppStore();
   const {
     data: connectorsData,
@@ -76,6 +87,7 @@ export function Connectors() {
   const [testPayload, setTestPayload] = useState(DEFAULT_TEST_PAYLOAD);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [catalogueQuery, setCatalogueQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [, startTransition] = useTransition();
 
   const connectors = connectorsData?.connectors ?? [];
@@ -159,95 +171,121 @@ export function Connectors() {
 
   const refreshInstances = () => queryClient.invalidateQueries({ queryKey: ['connector-instances', currentProjectId] });
 
+  const types = Array.from(new Set(connectors.map((c) => c.type ?? '').filter((type) => type !== ''))).sort();
+  const shown = catalogue.filter((c) => typeFilter === 'all' || c.type === typeFilter);
+  const connectionsOf = (connector: ApiConnector) => instances.filter((i) => i.connector?.id === connector.id);
+  const copy = SECTION_COPY[section];
+
   return (
-    <Stack gap="xl">
-      <PageHeader
-        title={t('page.connectors.title')}
-        description={t('page.connectors.subtitle')}
-        actions={
-          <Group gap="sm">
-            <Paper withBorder px="md" py={4} radius="md" bg="gray.0">
-              <Text size="xs" fw={700}>
-                {instances.length === 1 ? '1 connection' : `${instances.length} connections`}
-              </Text>
-            </Paper>
-            {expertMode && (
-              <Button variant="light" leftSection={<Plus size={16} />} onClick={customModal.open}>
-                Custom connector
-              </Button>
-            )}
-          </Group>
-        }
-      />
+    <Stack gap="lg">
+      {section === 'documents' && <ConnectorManifests asPage />}
+      {section === 'outgoing' && <OutgoingWebhookSettings asPage />}
+      {section === 'incoming' && <WebhookSettings asPage />}
 
-      {/* Outbound and inbound belong together: to whoever is wiring a system
-          up, calling a partner, telling one what happened and being called by
-          one are the same job. */}
-      <ConnectorManifests />
-      <OutgoingWebhookSettings />
-      <WebhookSettings />
-
-      <Paper p="xl" radius="lg" withBorder shadow="sm">
-        <Stack gap="lg">
-          <Group justify="space-between">
-            <Box>
-              <Title order={4}>Catalogue</Title>
-              <Text size="xs" c="dimmed">Pick a service to connect this project to.</Text>
-            </Box>
+      {section === 'catalogue' && (
+        <>
+          <PageHeader
+            title={copy.title}
+            description={copy.description}
+            actions={
+              expertMode ? (
+                <Button variant="default" leftSection={<Plus size={16} />} onClick={customModal.open}>
+                  Custom connector
+                </Button>
+              ) : undefined
+            }
+          />
+          <Group gap="sm" wrap="wrap">
             <TextInput
               aria-label="Search the catalogue"
-              placeholder="Search the catalogue…"
+              placeholder="Search the catalogue"
               leftSection={<Search size={16} />}
-              size="sm"
-              radius="md"
-              w={300}
+              w={320}
               onChange={(e) => {
                 const value = e.currentTarget.value;
                 startTransition(() => setCatalogueQuery(value));
               }}
             />
+            {types.length > 1 && (
+              <SegmentedControl
+                aria-label="Kind of service"
+                value={typeFilter}
+                onChange={(value) => setTypeFilter(String(value))}
+                data={[
+                  { value: 'all', label: `All ${catalogue.length}` },
+                  ...types.map((type) => ({
+                    value: type,
+                    label: `${type.charAt(0).toUpperCase()}${type.slice(1).toLowerCase()} ${catalogue.filter((c) => c.type === type).length}`,
+                  })),
+                ]}
+              />
+            )}
           </Group>
-          <Divider />
           {connectorsLoading || instancesLoading ? (
-            <CardGridLoadingState count={8} cols={4} />
+            <CardGridLoadingState count={6} cols={3} />
           ) : connectorsError ? (
             <ErrorState error={connectorsError} action="load your connectors" onRetry={() => refetchConnectors()} />
-          ) : catalogue.length === 0 ? (
+          ) : shown.length === 0 ? (
             <Text size="sm" c="dimmed">Nothing in the catalogue matches “{catalogueQuery}”.</Text>
           ) : (
-            <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="lg">
-              {catalogue.map((connector) => {
+            <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+              {shown.map((connector) => {
+                const connected = connectionsOf(connector);
                 return (
-                  <Card key={connector.id} withBorder padding="lg" radius="md" shadow="xs" className="connector-card">
-                    <Group justify="space-between" mb="sm">
-                      <ThemeIcon size={40} radius="md" variant="light" color="blue">
-                        <ConnectorGlyph name={connector.icon} size={24} />
-                      </ThemeIcon>
-                      <Badge variant="light" size="xs">{connector.type}</Badge>
+                  <Card key={connector.id} withBorder padding="md" radius="lg" className={classes.card}>
+                    <Group gap="sm" wrap="nowrap" mb="sm">
+                      <span className={classes.glyph} aria-hidden>
+                        <ConnectorGlyph name={connector.icon} size={18} />
+                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <Text fw={600} size="sm" truncate>{connector.name}</Text>
+                        <Text size="xs" c="dimmed" tt="capitalize">{connector.type?.toLowerCase()}</Text>
+                      </div>
                     </Group>
-                    <Text fw={700} size="md" mb={4}>{connector.name}</Text>
-                    <Text size="xs" c="dimmed" mb="lg" h={32} lineClamp={2}>{connector.description}</Text>
-                    <Button variant="light" fullWidth size="xs" radius="md" leftSection={<Plus size={14} />} onClick={() => beginSetup(connector)}>
-                      Connect
-                    </Button>
+                    <Text size="sm" c="dimmed" lineClamp={2} className={classes.description}>
+                      {connector.description}
+                    </Text>
+                    <Group justify="space-between" className={classes.footer}>
+                      {connected.length > 0 ? (
+                        <Badge color="green" variant="light" radius="xl">
+                          {connected.length === 1 ? 'Connected' : `${connected.length} connections`}
+                        </Badge>
+                      ) : (
+                        <Text size="xs" c="dimmed">Not connected</Text>
+                      )}
+                      <Button variant="default" size="xs" leftSection={<Plus size={14} />} onClick={() => beginSetup(connector)}>
+                        {connected.length > 0 ? 'Add another' : 'Connect'}
+                      </Button>
+                    </Group>
                   </Card>
                 );
               })}
             </SimpleGrid>
           )}
-        </Stack>
-      </Paper>
+        </>
+      )}
 
-      <ConnectorInstanceTable
-        instances={instances}
-        connectors={connectors}
-        expertMode={expertMode}
-        onRefresh={refreshInstances}
-        refreshing={instancesFetching}
-        onTest={beginTest}
-        onEdit={beginEdit}
-        onDelete={remove}
-      />
+      {section === 'connections' && (
+        <>
+          <PageHeader
+            title={copy.title}
+            description={copy.description}
+            actions={
+              <Button variant="default" onClick={refreshInstances} loading={instancesFetching}>
+                Refresh
+              </Button>
+            }
+          />
+          <ConnectorInstanceTable
+            instances={instances}
+            connectors={connectors}
+            expertMode={expertMode}
+            onTest={beginTest}
+            onEdit={beginEdit}
+            onDelete={remove}
+          />
+        </>
+      )}
 
       <ConnectorSetupWizard
         opened={wizardOpened}

@@ -11,42 +11,9 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
-  border-right: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  /* The frame tone, shared with the top bar: no line between them. */
+  background-color: var(--app-frame);
   overflow: hidden;
-}
-
-/* --- brand ---------------------------------------------------------------- */
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: var(--mantine-spacing-sm);
-  height: 60px;
-  padding-inline: 18px;
-  flex-shrink: 0;
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
-  color: var(--mantine-color-text);
-  text-decoration: none;
-}
-
-.brandMark {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  /* blue-8: the mark carries white text, and white on blue-6 is 3.55:1. */
-  background-color: var(--mantine-color-blue-8);
-  color: var(--mantine-color-white);
-}
-
-.brandName {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
 }
 
 /* --- sections ------------------------------------------------------------- */
@@ -59,12 +26,10 @@
 }
 
 .sectionLabel {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 11.5px;
+  font-weight: 500;
   color: var(--mantine-color-dimmed);
-  padding: 14px 10px 6px;
+  padding: 16px 10px 6px;
   white-space: nowrap;
 }
 
@@ -82,44 +47,45 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 38px;
+  gap: 10px;
+  width: 100%;
+  height: 34px;
   padding-inline: 10px;
+  font-weight: 500;
   border-radius: var(--mantine-radius-md);
   /* Inactive items were `dimmed`, the token for de-emphasised text, which
      sits near the AA contrast floor on these backgrounds. Navigation is a
      primary control: inactive items read clearly, and the ACTIVE item is what
      stands out. */
-  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+  color: light-dark(#52525b, var(--mantine-color-dark-1));
   text-decoration: none;
   transition: background-color 120ms ease, color 120ms ease;
 }
 
 .link:hover {
-  background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));
+  background-color: light-dark(rgba(24, 24, 27, 0.05), rgba(255, 255, 255, 0.05));
   color: var(--mantine-color-text);
 }
 
+/* The page being looked at: a raised chip in the card colour, its icon in the
+   accent. Tone, not a stripe, marks it. */
 .link[data-active] {
-  background-color: light-dark(var(--mantine-color-blue-0), rgba(34, 139, 230, 0.12));
-  /* blue-9, not blue-7: on the blue-0 tint behind it, blue-7 measures
-     3.77:1 against the 4.5:1 AA asks for. */
-  color: light-dark(var(--mantine-color-blue-9), var(--mantine-color-blue-3));
-  font-weight: 500;
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  box-shadow: 0 0 0 1px var(--mantine-color-default-border), 0 1px 2px rgba(16, 24, 40, 0.04);
+  color: var(--mantine-color-text);
+}
+
+.link[data-active] .linkIcon,
+.link[data-parent-active] .linkIcon {
+  color: light-dark(var(--mantine-color-indigo-7), var(--mantine-color-indigo-3));
+}
+
+.link[data-parent-active] {
+  color: var(--mantine-color-text);
 }
 
 /* A rail on the active item, so the current location is legible at a glance
    in both expanded and collapsed states. */
-.link[data-active]::before {
-  content: '';
-  position: absolute;
-  left: -10px;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background-color: var(--mantine-color-blue-6);
-}
 
 .link:focus-visible {
   outline: 2px solid var(--mantine-color-blue-6);
@@ -131,7 +97,9 @@
 }
 
 .linkLabel {
-  font-size: 14px;
+  flex: 1;
+  text-align: left;
+  font-size: 13.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -147,12 +115,11 @@
 .footer {
   flex-shrink: 0;
   padding: 10px;
-  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
 }
 
 .collapseToggle {
-  width: 100%;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--mantine-radius-md);
   display: flex;
   align-items: center;
@@ -216,4 +183,114 @@ a.buildVersion:hover {
   outline: 2px solid var(--mantine-color-blue-6);
   outline-offset: 2px;
   border-radius: var(--mantine-radius-sm);
+}
+
+.chevron {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: transform 150ms ease;
+}
+
+.chevron[data-open] {
+  transform: rotate(90deg);
+}
+
+/* A group's pages hang off a hairline under its icon. */
+.subList {
+  margin: 2px 0 6px 19px;
+  padding-left: 10px;
+  border-left: 1px solid var(--mantine-color-default-border);
+}
+
+.subLink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding-inline: 10px;
+  border-radius: var(--mantine-radius-md);
+  font-size: 13px;
+  color: var(--mantine-color-dimmed);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.subLink:hover {
+  color: var(--mantine-color-text);
+  background-color: light-dark(rgba(24, 24, 27, 0.05), rgba(255, 255, 255, 0.05));
+}
+
+.subLink[data-active] {
+  color: light-dark(var(--mantine-color-indigo-8), var(--mantine-color-indigo-2));
+  font-weight: 600;
+}
+
+.subLink[data-active]::before {
+  content: '';
+  position: absolute;
+  left: -11px;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+  border-radius: 2px;
+  background-color: var(--mantine-color-indigo-6);
+}
+
+.subLink:focus-visible {
+  outline: 2px solid var(--mantine-color-indigo-6);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+/* --- account, at the foot ------------------------------------------------- */
+.account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border-radius: var(--mantine-radius-md);
+  transition: background-color 120ms ease;
+}
+
+.account:hover {
+  background-color: light-dark(rgba(24, 24, 27, 0.05), rgba(255, 255, 255, 0.05));
+}
+
+.account:focus-visible {
+  outline: 2px solid var(--mantine-color-indigo-6);
+  outline-offset: 2px;
+}
+
+.collapsed .account {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.accountText {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.accountMore {
+  flex-shrink: 0;
+  color: var(--mantine-color-dimmed);
+}
+
+.footerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 10px 6px;
 }

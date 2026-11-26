@@ -39,6 +39,15 @@ if [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
     if [ "$fresh_install" = true ]; then
         systemctl enable --now metis-server.service >/dev/null 2>&1 || true
     fi
+    # The Upgrades page's button: it watches for a request file and starts
+    # nothing on its own. Disable it to keep upgrades to the command line.
+    # Enabled once, on the first install that ships it (an installation
+    # upgraded from a release without it gets it too), so an operator who
+    # disabled it is not overruled by the next upgrade.
+    if [ ! -e /var/lib/metis-server/.upgrade-path-offered ]; then
+        systemctl enable --now metis-server-upgrade.path >/dev/null 2>&1 || true
+        : > /var/lib/metis-server/.upgrade-path-offered
+    fi
 elif command -v rc-update >/dev/null 2>&1; then
     # OpenRC (Alpine). Added to the default runlevel even where OpenRC is not
     # running, such as a container being built, so it starts on the next

@@ -297,7 +297,7 @@ export function Setup({ onComplete }: { onComplete: () => void }) {
       mih="100vh"
       py="xl"
       style={{
-        background: `linear-gradient(135deg, ${theme.colors.gray[0]} 0%, ${theme.colors.gray[2]} 100%)`,
+        background: `light-dark(linear-gradient(135deg, ${theme.colors.gray[0]} 0%, ${theme.colors.gray[2]} 100%), var(--mantine-color-dark-8))`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

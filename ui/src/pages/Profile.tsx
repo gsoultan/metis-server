@@ -76,7 +76,7 @@ export function Profile() {
             <Title order={3} size="h5" mb="md">Your Organizations</Title>
             <Stack gap="sm">
               {user.organizations?.map((org) => (
-                <Paper key={org.id} withBorder p="xs" radius="md" bg="gray.0">
+                <Paper key={org.id} withBorder p="xs" radius="md" bg="var(--app-surface-subtle)">
                   <Group justify="space-between">
                     <Group gap="xs">
                       <Building2 size={16} color="var(--mantine-color-blue-6)" />

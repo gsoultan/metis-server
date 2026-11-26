@@ -150,7 +150,7 @@ export function ChangePasswordModal({ opened, onClose }: ChangePasswordModalProp
           </form.Field>
 
           <Group justify="flex-end" mt="sm">
-            <Button variant="subtle" onClick={handleClose} disabled={changePassword.isPending}>
+            <Button variant="default" onClick={handleClose} disabled={changePassword.isPending}>
               Cancel
             </Button>
             {/* Disabled until the form is genuinely submittable, so a click

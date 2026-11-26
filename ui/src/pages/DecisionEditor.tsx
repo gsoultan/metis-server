@@ -725,7 +725,7 @@ export function DecisionEditor({ definitionId }: { definitionId?: string }) {
             </Group>
             <ScrollArea scrollbars="x" type="auto" ref={gridRef}>
               <Table withColumnBorders verticalSpacing={2} stickyHeader>
-                <Table.Thead bg="var(--mantine-color-gray-0)">
+                <Table.Thead>
                   <Table.Tr>
                     <Table.Th w={orderMatters ? 76 : 44} ta="center">
                       <Tooltip label={policy?.label ?? hitPolicy} withArrow>
@@ -805,7 +805,7 @@ export function DecisionEditor({ definitionId }: { definitionId?: string }) {
                   {rules.map((rule, ruleIndex) => {
                     const matched = highlighted.includes(ruleIndex);
                     return (
-                      <Table.Tr key={rule.id} bg={matched ? 'var(--mantine-color-orange-0)' : undefined}>
+                      <Table.Tr key={rule.id} bg={matched ? 'var(--mantine-color-orange-light)' : undefined}>
                         <Table.Td ta="center">
                           <Group gap={2} wrap="nowrap" justify="center">
                             {matched ? (
@@ -858,7 +858,7 @@ export function DecisionEditor({ definitionId }: { definitionId?: string }) {
                         ))}
 
                         {outputs.map((output, columnIndex) => (
-                          <Table.Td key={`${rule.id}-out-${output.id}`} p={0} bg="var(--mantine-color-teal-0)">
+                          <Table.Td key={`${rule.id}-out-${output.id}`} p={0} bg="var(--mantine-color-teal-light)">
                             <ResultCell
                               value={rule.output_entries[columnIndex] ?? ''}
                               type={output.type}

@@ -24,22 +24,22 @@
 
 .react-flow__controls {
   box-shadow: var(--mantine-shadow-sm);
-  border: 1px solid var(--mantine-color-gray-3);
+  border: 1px solid var(--mantine-color-default-border);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .react-flow__controls-button {
-  border-bottom: 1px solid var(--mantine-color-gray-3);
+  border-bottom: 1px solid var(--mantine-color-default-border);
   background: var(--mantine-color-body);
 }
 
 .react-flow__controls-button:hover {
-  background: var(--mantine-color-gray-0);
+  background: var(--app-surface-subtle);
 }
 
 .react-flow__background {
-  background-color: #fafafa;
+  background-color: light-dark(#fafafa, var(--mantine-color-dark-8));
 }
 
 .logo {
@@ -255,13 +255,13 @@
   flex: 1 1 45%;
   height: 100%;
   overflow-y: auto;
-  background: #f8fafc;
+  background: light-dark(#f8fafc, var(--mantine-color-dark-8));
 }
 
 /* Login card */
 .login-card {
-  background: white;
-  border: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-body);
+  border: 1px solid var(--mantine-color-default-border);
   box-shadow: 
     0 1px 3px rgba(0,0,0,0.04),
     0 8px 24px rgba(0,0,0,0.06);

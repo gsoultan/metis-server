@@ -1,6 +1,8 @@
 # Build output
 /bin/
 /dist/
+# release.json, written by the release build (.goreleaser.yaml)
+/.release/
 *.test
 *.out
 coverage.html

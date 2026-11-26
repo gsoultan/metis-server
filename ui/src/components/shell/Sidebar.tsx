@@ -1,35 +1,16 @@
-import { Tooltip } from '@mantine/core';
+import { Tooltip, UnstyledButton } from '@mantine/core';
 import { Link, useRouterState } from '@tanstack/react-router';
-import {
-  Archive,
-  ArrowUpCircle,
-  PackageCheck,
-  Building2,
-  Contact,
-  ChevronsLeft,
-  ChevronsRight,
-  ClipboardList,
-  FolderGit2,
-  LayoutGrid,
-  Network,
-  Server,
-  ServerCog,
-  Play,
-  ScrollText,
-  ShieldCheck,
-  Table2,
-  TerminalSquare,
-  Users,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react';
+import { useState } from 'react';
+import { ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { hasRole } from '../../domain/access';
 import { PRIVILEGED_ROLE } from '../../domain/roles';
 import { useViewerAccess } from '../../hooks/useViewerAccess';
 import { useAppStore } from '../../store/useAppStore';
+import { AccountMenu } from './AccountMenu';
 import { BuildVersion } from './BuildVersion';
 import classes from './Sidebar.module.css';
 import { useTranslation } from '../../i18n/context';
+import { isActive, sections, type NavItem, type NavLocation } from './navigation';
 
 /**
  * Primary navigation.
@@ -52,167 +33,129 @@ import { useTranslation } from '../../i18n/context';
  * to reach.
  */
 
-interface NavItem {
-  icon: LucideIcon;
-  /** A message key, not a sentence — see src/i18n. */
-  label: string;
-  to: string;
-  /** Shown in the collapsed tooltip to explain a non-obvious destination. */
-  hint?: string;
-  /**
-   * Which pages count as this entry, when that is not simply its own path.
-   * Processes and Decisions both land on /models — on different tabs — and
-   * the router's own matching lit Processes for both, and neither while a
-   * process or a decision was open for editing.
-   */
-  activeOn?: (location: { pathname: string; tab: unknown }) => boolean;
-  /**
-   * Offered only to administrators. This decides what is shown, never what is
-   * allowed: the server refuses the page's reads to anybody else regardless.
-   */
-  adminOnly?: boolean;
-}
-
-interface NavSection {
-  /** A message key. */
-  label: string;
-  items: NavItem[];
-}
-
-const sections: NavSection[] = [
-  {
-    label: 'nav.sectionWork',
-    items: [
-      { icon: LayoutGrid, label: 'nav.dashboard', to: '/', hint: 'Overview of this project' },
-      { icon: ClipboardList, label: 'nav.inbox', to: '/inbox', hint: 'Tasks assigned to you' },
-      { icon: Users, label: 'nav.allTasks', to: '/tasks', hint: 'Every task in this project' },
-      // The people processes assign work to. Under Work rather than Administer
-      // on purpose: they are a different population from the accounts that run
-      // the platform, and putting the two side by side is how they came to be
-      // one list in the first place.
-      { icon: Contact, label: 'nav.people', to: '/people', hint: 'Who this project can assign work to' },
-    ],
-  },
-  {
-    label: 'nav.sectionBuild',
-    items: [
-      {
-        icon: Network,
-        label: 'nav.processes',
-        to: '/models',
-        hint: 'Design and deploy process models',
-        activeOn: ({ pathname, tab }) => pathname === '/designer' || (pathname === '/models' && tab !== 'decisions'),
-      },
-      {
-        icon: Table2,
-        label: 'nav.decisions',
-        to: '/decisions',
-        hint: 'Business rules as decision tables',
-        activeOn: ({ pathname, tab }) => pathname === '/decision-editor' || (pathname === '/models' && tab === 'decisions'),
-      },
-      { icon: Zap, label: 'nav.connectors', to: '/connectors', hint: 'Connect to other systems' },
-      // Under Build rather than a developer section of its own: writing the
-      // worker for a topic is part of building the process, and separating the
-      // two is how a model ships with nothing on the other end of its topics.
-      {
-        icon: TerminalSquare,
-        label: 'nav.sdkSandbox',
-        to: '/sdk',
-        hint: 'Try the API your integration will call',
-      },
-    ],
-  },
-  {
-    label: 'nav.sectionOperate',
-    items: [
-      { icon: Play, label: 'nav.instances', to: '/instances', hint: 'Running and completed processes' },
-      { icon: Archive, label: 'nav.archive', to: '/archive', hint: 'Finished processes kept after their retention period' },
-      { icon: PackageCheck, label: 'nav.releases', to: '/releases', hint: 'Tested versions moved to the next environment together' },
-    ],
-  },
-  {
-    label: 'nav.sectionAdminister',
-    items: [
-      { icon: FolderGit2, label: 'nav.projects', to: '/projects' },
-      { icon: Building2, label: 'nav.organizations', to: '/organizations' },
-      { icon: ShieldCheck, label: 'nav.groups', to: '/groups' },
-      { icon: Users, label: 'nav.platformAccess', to: '/users', hint: 'Accounts that run Metis, by role' },
-      {
-        icon: ScrollText,
-        label: 'nav.audit',
-        to: '/audit',
-        hint: 'Who did what across this organization',
-        adminOnly: true,
-      },
-      {
-        icon: Server,
-        label: 'nav.environments',
-        to: '/environments',
-        hint: 'Development, Staging and Production, and the releases sent between them',
-        adminOnly: true,
-      },
-      {
-        icon: ServerCog,
-        label: 'nav.servers',
-        to: '/servers',
-        hint: 'The machines running this server, and what each runs',
-        adminOnly: true,
-      },
-      {
-        icon: ArrowUpCircle,
-        label: 'nav.upgrades',
-        to: '/upgrades',
-        hint: 'New releases of Metis for this installation',
-        adminOnly: true,
-      },
-    ],
-  },
-];
-
-function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
-  const { t } = useTranslation();
-  const label = t(item.label);
+function useNavLocation(): NavLocation {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const tab = useRouterState({ select: (state) => (state.location.search as { tab?: unknown }).tab });
-  const active = item.activeOn?.({ pathname, tab });
-  const link = (
-    <Link
-      to={item.to}
-      className={classes.link}
-      {...(active === undefined
-        ? { activeProps: { 'data-active': true, 'aria-current': 'page' as const } }
-        : {
-            activeProps: {},
-            'data-active': active || undefined,
-            'aria-current': active ? ('page' as const) : undefined,
-          })}
-      // Collapsed, the label is not rendered, so the icon alone would announce
-      // as an unlabelled link. The accessible name comes from aria-label.
-      aria-label={collapsed ? label : undefined}
-    >
-      <item.icon className={classes.linkIcon} size={19} strokeWidth={1.75} aria-hidden />
-      {!collapsed && <span className={classes.linkLabel}>{label}</span>}
-    </Link>
-  );
+  const search = useRouterState({ select: (state) => state.location.search as Record<string, unknown> });
+  return { pathname, search };
+}
 
-  // A tooltip is the only way to identify an icon in the collapsed rail, and
-  // the hint is useful even when expanded for destinations whose name does not
-  // fully explain them.
+
+function withHint(hint: string | undefined, label: string, collapsed: boolean, node: React.ReactElement) {
   if (collapsed) {
     return (
-      <Tooltip label={item.hint ? `${label} — ${item.hint}` : label} position="right" withArrow openDelay={200}>
-        {link}
+      <Tooltip label={hint ? `${label} — ${hint}` : label} position="right" withArrow openDelay={200}>
+        {node}
       </Tooltip>
     );
   }
-  if (item.hint) {
+  if (hint) {
     return (
-      <Tooltip label={item.hint} position="right" withArrow openDelay={600}>
-        {link}
+      <Tooltip label={hint} position="right" withArrow openDelay={600}>
+        {node}
       </Tooltip>
     );
   }
-  return link;
+  return node;
+}
+
+function NavLink({ item, collapsed, location }: { item: NavItem; collapsed: boolean; location: NavLocation }) {
+  const { t } = useTranslation();
+  const label = t(item.label);
+  const active = isActive(item, location);
+  return withHint(
+    item.hint,
+    label,
+    collapsed,
+    <Link
+      to={item.to}
+      search={item.search}
+      className={classes.link}
+      activeProps={{}}
+      data-active={active || undefined}
+      aria-current={active ? 'page' : undefined}
+      // Collapsed, the label is not rendered; the accessible name comes from here.
+      aria-label={collapsed ? label : undefined}
+    >
+      <item.icon className={classes.linkIcon} size={18} strokeWidth={1.75} aria-hidden />
+      {!collapsed && <span className={classes.linkLabel}>{label}</span>}
+    </Link>,
+  );
+}
+
+function NavGroup({ item, collapsed, location }: { item: NavItem; collapsed: boolean; location: NavLocation }) {
+  const { t } = useTranslation();
+  const label = t(item.label);
+  const children = item.children ?? [];
+  const holdsActive = children.some((child) => isActive(child, location));
+  // Open while one of its pages is showing; a click opens or closes it by hand
+  // until the next page is chosen elsewhere.
+  const [toggled, setToggled] = useState<boolean | null>(null);
+  const open = toggled ?? holdsActive;
+
+  if (collapsed) {
+    // The rail has no room for a sub-menu: the icon goes to the group's first
+    // page, and the tooltip names the group.
+    const first = children[0];
+    return withHint(
+      undefined,
+      label,
+      true,
+      <Link
+        to={first?.to ?? item.to}
+        search={first?.search}
+        className={classes.link}
+        activeProps={{}}
+        data-active={holdsActive || undefined}
+        aria-label={label}
+      >
+        <item.icon className={classes.linkIcon} size={18} strokeWidth={1.75} aria-hidden />
+      </Link>,
+    );
+  }
+
+  const listId = `nav-group-${item.label}`;
+  return (
+    <div>
+      <UnstyledButton
+        className={classes.link}
+        data-parent-active={holdsActive || undefined}
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setToggled(!open)}
+      >
+        <item.icon className={classes.linkIcon} size={18} strokeWidth={1.75} aria-hidden />
+        <span className={classes.linkLabel}>{label}</span>
+        <ChevronRight size={14} className={classes.chevron} data-open={open || undefined} aria-hidden />
+      </UnstyledButton>
+      {open && (
+        <div id={listId} className={classes.subList}>
+          {children.map((child) => {
+            const childActive = isActive(child, location);
+            const childLabel = t(child.label);
+            return (
+              <div key={child.label}>
+                {withHint(
+                  child.hint,
+                  childLabel,
+                  false,
+                  <Link
+                    to={child.to}
+                    search={child.search}
+                    className={classes.subLink}
+                    activeProps={{}}
+                    data-active={childActive || undefined}
+                    aria-current={childActive ? 'page' : undefined}
+                  >
+                    {childLabel}
+                  </Link>,
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Sidebar() {
@@ -220,8 +163,19 @@ export function Sidebar() {
   const { t } = useTranslation();
   const collapsed = !sidebarExpanded;
   const isAdministrator = hasRole(useViewerAccess(), PRIVILEGED_ROLE);
+  const location = useNavLocation();
   const visibleSections = sections
-    .map((section) => ({ ...section, items: section.items.filter((item) => !item.adminOnly || isAdministrator) }))
+    .map((section) => ({
+      ...section,
+      items: section.items
+        .filter((item) => !item.adminOnly || isAdministrator)
+        .map((item) =>
+          item.children
+            ? { ...item, children: item.children.filter((child) => !child.adminOnly || isAdministrator) }
+            : item,
+        )
+        .filter((item) => !item.children || item.children.length > 0),
+    }))
     .filter((section) => section.items.length > 0);
 
   return (
@@ -229,12 +183,6 @@ export function Sidebar() {
     // nested one left two with the same name, which a screen reader offers as
     // two indistinguishable choices. The name lives on the outer element.
     <div className={`${classes.navbar} ${collapsed ? classes.collapsed : ''}`}>
-      <Link to="/" className={classes.brand} aria-label="Metis BPM home">
-        <span className={classes.brandMark} aria-hidden>
-          <Network size={17} strokeWidth={2} />
-        </span>
-        {!collapsed && <span className={classes.brandName}>Metis BPM</span>}
-      </Link>
 
       <div className={classes.scroll}>
         {visibleSections.map((section) => (
@@ -244,30 +192,35 @@ export function Sidebar() {
             ) : (
               <div className={classes.sectionLabel}>{t(section.label)}</div>
             )}
-            {section.items.map((item) => (
-              <NavLink key={item.to} item={item} collapsed={collapsed} />
-            ))}
+            {section.items.map((item) =>
+              item.children ? (
+                <NavGroup key={item.label} item={item} collapsed={collapsed} location={location} />
+              ) : (
+                <NavLink key={item.label} item={item} collapsed={collapsed} location={location} />
+              ),
+            )}
           </div>
         ))}
       </div>
 
       <div className={classes.footer}>
-        {/*
-          Theme, settings and logout used to live here as pseudo-nav links —
-          "Settings" had no destination at all, and logout was duplicated in the
-          header user menu. Account concerns belong in one place: the user menu.
-        */}
-        <button
-          type="button"
-          className={classes.collapseToggle}
-          onClick={toggleSidebar}
-          aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-          aria-expanded={sidebarExpanded}
-        >
-          {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
-          {!collapsed && <span>{t('nav.collapse')}</span>}
-        </button>
-        <BuildVersion collapsed={collapsed} />
+        {/* The version and the collapse control on one quiet row, then who is
+            signed in. */}
+        <div className={classes.footerRow} style={collapsed ? { flexDirection: 'column', paddingInline: 0 } : undefined}>
+          <BuildVersion collapsed={collapsed} />
+          <Tooltip label={collapsed ? 'Expand navigation' : t('nav.collapse')} position="right" withArrow openDelay={300}>
+            <button
+              type="button"
+              className={classes.collapseToggle}
+              onClick={toggleSidebar}
+              aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+              aria-expanded={sidebarExpanded}
+            >
+              {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
+            </button>
+          </Tooltip>
+        </div>
+        <AccountMenu collapsed={collapsed} />
       </div>
     </div>
   );

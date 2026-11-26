@@ -38,7 +38,7 @@ export function TrialAnswer({
 
   const decided = outcome.positions.length > 0;
   return (
-    <Card withBorder radius="sm" p="xs" bg={decided ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-yellow-0)'}>
+    <Card withBorder radius="sm" p="xs" bg={decided ? 'var(--app-surface-subtle)' : 'var(--mantine-color-yellow-light)'}>
       <Stack gap={6}>
         {/*
           Nothing matching is not a success. It used to be reported under a

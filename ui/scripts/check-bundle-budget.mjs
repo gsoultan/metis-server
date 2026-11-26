@@ -37,8 +37,12 @@ const BUDGETS = {
    *  339.4 here, and a security fix is not something to defer behind a
    *  lazy route. Raised from 344 when the Archive page added its navigation
    *  item and its words to the English catalogue, which is the fallback and
-   *  so ships with the first paint: 0.6 kB, to 344.2 in the Docker build. */
-  initialTotal: 346,
+   *  so ships with the first paint: 0.6 kB, to 344.2 in the Docker build.
+   *  Raised from 346 when the redesign gave the theme a dark scale, frame and
+   *  page tones and form defaults, and the English catalogue the sidebar's
+   *  sub-menu words: 0.7 kB, to 346.4. The theme paints the first screen, so
+   *  it cannot wait for a lazy route. */
+  initialTotal: 348,
   /** The single largest eager chunk, to catch one dependency swallowing the
    *  app. Linux measures 108.8; macOS 108.0. */
   largestChunk: 112,

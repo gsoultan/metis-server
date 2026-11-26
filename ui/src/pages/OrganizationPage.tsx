@@ -137,7 +137,7 @@ function CurrentOrganization({ organization, tab, onTab }: CurrentOrganizationPr
             flex: 'none',
             borderRadius: 10,
             background: 'var(--mantine-color-indigo-6)',
-            color: 'white',
+            color: 'var(--mantine-color-body)',
             fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
@@ -246,7 +246,7 @@ function Members({
         ) : (
           <Table.ScrollContainer minWidth={700}>
             <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-              <Table.Thead bg="gray.0">
+              <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Member</Table.Th>
                   <Table.Th>Email</Table.Th>
@@ -324,7 +324,7 @@ function Projects({ organizationId }: { organizationId: string }) {
           <EmptyState icon={FolderGit2} title="No projects yet" description="A project holds process models, decisions and the connections they use." />
         ) : (
           <Table verticalSpacing="md" horizontalSpacing="xl">
-            <Table.Thead bg="gray.0">
+            <Table.Thead>
               <Table.Tr>
                 <Table.Th>Project</Table.Th>
                 <Table.Th>Description</Table.Th>

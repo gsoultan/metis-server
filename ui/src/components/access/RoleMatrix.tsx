@@ -133,7 +133,7 @@ export function RoleMatrix() {
           style={{ maxHeight: MATRIX_MAX_HEIGHT, overflowY: 'auto' }}
         >
           <Table stickyHeader verticalSpacing="sm" horizontalSpacing="lg" highlightOnHover>
-            <Table.Thead bg="gray.0">
+            <Table.Thead>
               <Table.Tr>
                 <Table.Th>{t('access.columnPerson')}</Table.Th>
                 {ROLE_OPTIONS.map((option) => (
