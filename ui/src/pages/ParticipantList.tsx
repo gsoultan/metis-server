@@ -37,6 +37,7 @@ import { MIN_PASSWORD_LENGTH } from '../domain/password';
 import { PRIVILEGED_ROLE } from '../domain/roles';
 import { matchesQuery } from '../domain/textSearch';
 import { useAppStore } from '../store/useAppStore';
+import { useViewerAccess } from '../hooks/useViewerAccess';
 import {
   useImportParticipants,
   useParticipants,
@@ -67,8 +68,9 @@ const STANDING_COLOURS: Record<string, string> = {
  */
 export function ParticipantList() {
   const { t } = useTranslation();
-  const isAdmin = useAppStore((state) => hasRole(state.user, PRIVILEGED_ROLE));
-  const isDesigner = useAppStore((state) => hasRole(state.user, PRIVILEGED_ROLE) || hasRole(state.user, 'DESIGNER'));
+  const access = useViewerAccess();
+  const isAdmin = hasRole(access, PRIVILEGED_ROLE);
+  const isDesigner = hasRole(access, PRIVILEGED_ROLE) || hasRole(access, 'DESIGNER');
   const deviceCounts = useDeviceCounts(isDesigner);
   const [devicesOf, setDevicesOf] = useState<{ id: string; name: string } | null>(null);
   const projectId = useAppStore((state) => state.currentProjectId);

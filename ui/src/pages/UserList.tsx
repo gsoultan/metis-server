@@ -153,7 +153,7 @@ export function UserList() {
             ) : (
             <Table.ScrollContainer minWidth={800}>
               <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-                <Table.Thead bg="gray.0">
+                <Table.Thead>
                   <Table.Tr>
                     <Table.Th>Account</Table.Th>
                     <Table.Th>Email</Table.Th>

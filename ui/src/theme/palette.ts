@@ -34,3 +34,12 @@ export const DIMMED_LIGHT = '#5c636a';
 
 /** Secondary text in dark mode. Mantine's default already passes, at 7.16:1. */
 export const DIMMED_DARK = '#a6a7ab';
+
+/**
+ * The tint under table headers, inset panels and form previews: one step off
+ * the card it sits in. A colour per scheme, read through the
+ * `--app-surface-subtle` variable, so nothing paints a light grey that stays
+ * light in dark mode. Mantine's gray-0 and dark-6.
+ */
+export const SURFACE_SUBTLE_LIGHT = '#f8f9fa';
+export const SURFACE_SUBTLE_DARK = '#25262b';

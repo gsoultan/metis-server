@@ -125,7 +125,7 @@ export function GroupList() {
         ) : (
         <Table.ScrollContainer minWidth={800}>
           <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-            <Table.Thead bg="gray.0">
+            <Table.Thead>
               <Table.Tr>
                 <Table.Th>Group</Table.Th>
                 <Table.Th>Description</Table.Th>

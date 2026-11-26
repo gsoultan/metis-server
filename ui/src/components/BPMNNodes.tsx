@@ -187,7 +187,7 @@ export const StartNode = ({ data, selected }: NodeProps) => (
         width: 40, 
         height: 40, 
         borderRadius: '50%', 
-        background: 'var(--mantine-color-green-0)',
+        background: 'var(--mantine-color-green-light)',
         border: '1px solid var(--mantine-color-green-7)',
         display: 'flex', 
         alignItems: 'center', 
@@ -217,7 +217,7 @@ export const EndNode = ({ data, selected }: NodeProps) => {
           width: 40, 
           height: 40, 
           borderRadius: '50%', 
-          background: 'var(--mantine-color-red-0)',
+          background: 'var(--mantine-color-red-light)',
           border: '3px solid var(--mantine-color-red-7)',
           display: 'flex', 
           alignItems: 'center', 
@@ -251,7 +251,7 @@ export const IntermediateNode = ({ data, selected }: NodeProps) => {
         width: 36, 
         height: 36, 
         borderRadius: '50%', 
-        background: 'var(--mantine-color-blue-0)',
+        background: 'var(--mantine-color-blue-light)',
         border: '1px solid var(--mantine-color-blue-7)',
         display: 'flex', 
         alignItems: 'center', 
@@ -465,7 +465,7 @@ export const GatewayNode = ({ data, selected }: NodeProps) => {
             height: 50,
             position: 'absolute',
             transform: 'rotate(45deg)',
-            background: 'var(--mantine-color-orange-0)',
+            background: 'var(--mantine-color-orange-light)',
             border: `2px solid ${selected ? 'var(--mantine-color-orange-8)' : 'var(--mantine-color-orange-6)'}`,
             borderRadius: '4px',
             boxShadow: 'var(--mantine-shadow-xs)',
@@ -542,7 +542,7 @@ export const PoolNode = ({ data, selected }: NodeProps) => (
     style={{ 
       minWidth: 800,
       minHeight: 200,
-      backgroundColor: 'var(--mantine-color-gray-0)',
+      backgroundColor: 'var(--app-surface-subtle)',
       border: `1px solid var(--mantine-color-gray-4)`,
       borderColor: selected ? `var(--mantine-color-blue-6)` : undefined,
       display: 'flex',
@@ -557,7 +557,7 @@ export const PoolNode = ({ data, selected }: NodeProps) => (
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'var(--mantine-color-gray-1)'
+      backgroundColor: 'var(--app-surface-subtle)'
     }}>
        <Text style={{ transform: 'rotate(-90deg)', whiteSpace: 'nowrap' }} fw={700} size="sm">
          {data.label as string || 'Pool'}
@@ -610,7 +610,7 @@ export const BoundaryNode = ({ data, selected }: NodeProps) => {
         width: 30, 
         height: 30, 
         borderRadius: '50%', 
-        background: 'white',
+        background: 'var(--mantine-color-body)',
         border: `2px ${data.interrupting === false ? 'dashed' : 'solid'} var(--mantine-color-orange-7)`,
         display: 'flex', 
         alignItems: 'center', 

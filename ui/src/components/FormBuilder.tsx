@@ -134,7 +134,7 @@ export function FormBuilder({ fields, onChange, previewSubmit }: FormBuilderProp
             </Group>
 
             {fields.length === 0 ? (
-              <Paper withBorder p="xl" radius="md" bg="var(--mantine-color-gray-0)" style={{ borderStyle: 'dashed', textAlign: 'center' }}>
+              <Paper withBorder p="xl" radius="md" bg="var(--app-surface-subtle)" style={{ borderStyle: 'dashed', textAlign: 'center' }}>
                 <Text size="sm" c="dimmed">No fields defined yet. Add a field to start building your form.</Text>
               </Paper>
             ) : (
@@ -172,13 +172,13 @@ export function FormBuilder({ fields, onChange, previewSubmit }: FormBuilderProp
         </Tabs.Panel>
 
         <Tabs.Panel value="preview">
-          <Paper withBorder p="xl" radius="lg" bg="gray.0">
+          <Paper withBorder p="xl" radius="lg" bg="var(--app-surface-subtle)">
             <Stack gap="xl">
               <Box>
                 <Text fw={700} size="md">Form Preview</Text>
                 <Text size="xs" c="dimmed">This is how the form will appear to the user.</Text>
               </Box>
-              <Paper withBorder p="xl" radius="md" bg="white" shadow="sm">
+              <Paper withBorder p="xl" radius="md" bg="var(--mantine-color-body)" shadow="sm">
                 <TaskForm 
                   fields={fields} 
                   variables={{}} 

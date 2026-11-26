@@ -73,7 +73,7 @@ export function ConnectorInstanceTable({
         ) : (
           <ScrollArea>
             <Table verticalSpacing="md" horizontalSpacing="lg">
-              <Table.Thead bg="gray.0">
+              <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Connection</Table.Th>
                   <Table.Th>Service</Table.Th>

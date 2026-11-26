@@ -98,7 +98,7 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
         <Card shadow="sm" radius="lg" withBorder p={0}>
           <Table.ScrollContainer minWidth={800}>
             <Table verticalSpacing="md" horizontalSpacing="xl">
-              <Table.Thead bg="gray.0"><HeaderRow /></Table.Thead>
+              <Table.Thead><HeaderRow /></Table.Thead>
               <Table.Tbody>
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Table.Tr key={i}>
@@ -141,7 +141,7 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
       <Card shadow="sm" radius="lg" withBorder p={0}>
         <Table.ScrollContainer minWidth={800}>
           <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-            <Table.Thead bg="gray.0"><HeaderRow /></Table.Thead>
+            <Table.Thead><HeaderRow /></Table.Thead>
             <Table.Tbody>
               {latestDefinitions.length === 0 ? (
                 <Table.Tr>

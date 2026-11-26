@@ -97,7 +97,7 @@ function ListBody({ rows, loading, error, onRetry, search, onEdit, onHistory, on
   return (
     <Table.ScrollContainer minWidth={800}>
       <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-        <Table.Thead bg="gray.0">
+        <Table.Thead>
           <HeaderRow />
         </Table.Thead>
         <Table.Tbody>

@@ -29,13 +29,14 @@ import {
 } from '../../hooks/useOutgoingWebhooks';
 import type { ApiOutgoingWebhook } from '../../services/domains/outgoingWebhookService';
 import { errorMessage } from '../../services/shared/errors';
-import { useAppStore } from '../../store/useAppStore';
+import { useViewerAccess } from '../../hooks/useViewerAccess';
 import { CreateOutgoingWebhook } from './CreateOutgoingWebhook';
 import { OutgoingDeliveryLog } from './OutgoingDeliveryLog';
 import { SendOutgoingTest } from './SendOutgoingTest';
 
 export function OutgoingWebhookSettings() {
-  const isAdmin = useAppStore((state) => hasRole(state.user, PRIVILEGED_ROLE));
+  const access = useViewerAccess();
+  const isAdmin = hasRole(access, PRIVILEGED_ROLE);
   const { data } = useOutgoingWebhooks();
   const setEnabled = useSetOutgoingWebhookEnabled();
   const remove = useDeleteOutgoingWebhook();

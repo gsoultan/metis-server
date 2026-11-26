@@ -166,7 +166,7 @@ export function Connectors() {
         description={t('page.connectors.subtitle')}
         actions={
           <Group gap="sm">
-            <Paper withBorder px="md" py={4} radius="md" bg="gray.0">
+            <Paper withBorder px="md" py={4} radius="md" bg="var(--app-surface-subtle)">
               <Text size="xs" fw={700}>
                 {instances.length === 1 ? '1 connection' : `${instances.length} connections`}
               </Text>

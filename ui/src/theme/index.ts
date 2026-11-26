@@ -4,7 +4,7 @@ import {
   type CSSVariablesResolver,
   type VariantColorsResolver,
   createTheme, rem, Card, Button, Table, Paper, ActionIcon, Badge, TextInput, ThemeIcon } from '@mantine/core';
-import { DIMMED_DARK, DIMMED_LIGHT } from './palette';
+import { DIMMED_DARK, DIMMED_LIGHT, SURFACE_SUBTLE_DARK, SURFACE_SUBTLE_LIGHT } from './palette';
 
 /**
  * Design tokens for Metis BPM.
@@ -102,9 +102,13 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {},
   light: {
     '--mantine-color-dimmed': DIMMED_LIGHT,
+    '--app-surface-subtle': SURFACE_SUBTLE_LIGHT,
     ...readableColourVariables(),
   },
-  dark: { '--mantine-color-dimmed': DIMMED_DARK },
+  dark: {
+    '--mantine-color-dimmed': DIMMED_DARK,
+    '--app-surface-subtle': SURFACE_SUBTLE_DARK,
+  },
 });
 
 /**
@@ -191,6 +195,10 @@ export const theme = createTheme({
     Table: Table.extend({
       defaultProps: { verticalSpacing: 'sm', horizontalSpacing: 'md', highlightOnHover: true },
       styles: {
+        // Every table header sits on the same tint, in both schemes. Pages
+        // used to paint it themselves with a fixed light grey, which stayed
+        // light in dark mode under light text.
+        thead: { backgroundColor: 'var(--app-surface-subtle)' },
         th: {
           // Was uppercase + letter-spacing + weight 700 + dimmed, which is
           // both shouty and a contrast risk on a tinted header row. Sentence

@@ -416,7 +416,7 @@ export function PropertyPanel({
         transitionProps={{ transition: 'fade', duration: 150 }}
         aria-label={`Settings for ${title}`}
         styles={{
-          content: { display: 'flex', flexDirection: 'column', backgroundColor: 'var(--mantine-color-gray-0)' },
+          content: { display: 'flex', flexDirection: 'column', backgroundColor: 'var(--app-surface-subtle)' },
           body: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: 0 },
         }}
       >

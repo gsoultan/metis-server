@@ -38,7 +38,7 @@ export function CompleteTaskModal({ task, onClose, onSubmit }: CompleteTaskModal
     {task && (
       <Stack py="md">
         {task.description && (
-          <Card withBorder padding="sm" radius="md" bg="var(--mantine-color-blue-0)">
+          <Card withBorder padding="sm" radius="md" bg="var(--mantine-color-blue-light)">
             <Group gap="xs" mb={4}>
               <Info size={16} color="var(--mantine-color-blue-6)" />
               <Text fw={600} size="sm" c="blue.8">Instructions</Text>
