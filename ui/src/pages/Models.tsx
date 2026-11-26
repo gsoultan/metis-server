@@ -1,9 +1,12 @@
-import { Tabs, Button, Stack } from '@mantine/core';
-import { Network, Table2, Plus } from 'lucide-react';
+import { Tabs, Button, Group, Stack } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { Network, Table2, Plus, Upload } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { DefinitionList } from './DefinitionList';
 import { DecisionList } from './DecisionList';
 import { CreationWizard } from '../components/CreationWizard';
+import { GruleImportModal } from '../components/GruleImportModal';
+import { reportHeadline, type GruleImportReport } from '../domain/gruleImport';
 import { useNavigate } from '@tanstack/react-router';
 import { Route } from '../routes/_authenticated.models';
 import { useState } from 'react';
@@ -14,6 +17,18 @@ export function Models() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { tab } = Route.useSearch();
   const [wizardOpened, setWizardOpened] = useState(false);
+  const [gruleOpened, setGruleOpened] = useState(false);
+
+  // A deployed import opens the process it made, which is where the rules now
+  // run; tables alone are shown where they were added.
+  const handleGruleImported = (report: GruleImportReport) => {
+    notifications.show({ title: 'Rules imported', message: reportHeadline(report), color: 'teal' });
+    if (report.process_id) {
+      navigate({ to: '/designer', search: { definitionId: report.process_id } });
+    } else {
+      setActiveTab('decisions');
+    }
+  };
 
   const setActiveTab = (val: string | null) => {
     navigate({ search: { tab: val === 'decisions' ? 'decisions' : 'processes' } });
@@ -48,15 +63,20 @@ export function Models() {
           tab === 'decisions' ? t('page.decisions.subtitle') : t('page.processes.subtitle')
         }
         actions={
-          <Button 
-            variant="filled" 
-            color="indigo" 
-            leftSection={<Plus size={16} />}
-            onClick={() => setWizardOpened(true)}
-          >
-            {/* Says what it makes: the wizard opens on the tab's kind. */}
-            {tab === 'decisions' ? 'New decision' : 'New process'}
-          </Button>
+          <Group gap="sm">
+            <Button variant="default" leftSection={<Upload size={16} />} onClick={() => setGruleOpened(true)}>
+              Import Grule rules
+            </Button>
+            <Button
+              variant="filled"
+              color="indigo"
+              leftSection={<Plus size={16} />}
+              onClick={() => setWizardOpened(true)}
+            >
+              {/* Says what it makes: the wizard opens on the tab's kind. */}
+              {tab === 'decisions' ? 'New decision' : 'New process'}
+            </Button>
+          </Group>
         }
       />
 
@@ -77,6 +97,12 @@ export function Models() {
           <DecisionList hideHeader onEdit={handleEditDecision} />
         </Tabs.Panel>
       </Tabs>
+
+      <GruleImportModal
+        opened={gruleOpened}
+        onClose={() => setGruleOpened(false)}
+        onImported={handleGruleImported}
+      />
 
       <CreationWizard 
         opened={wizardOpened}

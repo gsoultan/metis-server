@@ -29,6 +29,8 @@ export interface DecisionOutputColumn {
    * matches by this list and refuse to run without it.
    */
   values?: string[];
+  /** Each cell is a FEEL expression, kept as written. */
+  computed?: boolean;
 }
 
 /** One line of the table. */

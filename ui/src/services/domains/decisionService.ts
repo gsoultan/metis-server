@@ -8,6 +8,7 @@ import type {
   ProcessVariables,
 } from "../types";
 import { raiseIfRefused } from "../raise";
+import type { GruleImportReport, RuleFile } from "../../domain/gruleImport";
 
 type PageResponse = { total: number; page: number; page_size: number; has_more: boolean };
 
@@ -108,6 +109,33 @@ export const decisionService = {
   async getDecision(id: string, signal?: AbortSignal) {
     const data = await requestJSON<DecisionResponse>(`/decisions/${id}`, { signal });
     return { decision: data.decision, err: data.err };
+  },
+
+  /**
+   * Turns Grule rule files into decision tables and a process that runs them.
+   * A preview reports on every rule and stores nothing; `deploy` deploys the
+   * process as well as storing the tables.
+   */
+  async importGruleRules(params: {
+    projectId: string;
+    key: string;
+    name?: string;
+    files: RuleFile[];
+    preview?: boolean;
+    deploy?: boolean;
+  }): Promise<GruleImportReport> {
+    const data = await requestJSON<{ import?: GruleImportReport; err?: string }>("/decisions/import/grule", {
+      method: "POST",
+      body: {
+        project_id: params.projectId,
+        key: params.key,
+        name: params.name || undefined,
+        files: params.files,
+        preview: params.preview || undefined,
+        deploy: params.deploy || undefined,
+      },
+    });
+    return raiseIfRefused(data).import ?? {};
   },
 
   async createDecision(params: CreateDecisionPayload) {
