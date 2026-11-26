@@ -3,6 +3,7 @@ import { collectPages, type CollectedPages, type ListPage } from '../domain/allP
 import { AUTHORED_STALE_TIME } from '../services/queryDefaults';
 import { processService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
+import type { RuleFile } from '../domain/gruleImport';
 import type { ApiDecisionSummary, CreateDecisionPayload, ProcessVariables } from '../services/types';
 
 type DecisionsResult = Awaited<ReturnType<typeof processService.listDecisionSummaries>>;
@@ -87,6 +88,30 @@ export const useCreateDecision = () => {
       processService.createDecision({ ...params, project: currentProjectId ? { id: currentProjectId } : undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['decisions'] });
+    },
+  });
+};
+
+/**
+ * Brings a Grule rule set in. A preview stores nothing, so only a real import
+ * refreshes the lists it adds to.
+ */
+export const useImportGruleRules = () => {
+  const currentProjectId = useAppStore((state) => state.currentProjectId);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { key: string; name?: string; files: RuleFile[]; preview?: boolean; deploy?: boolean }) => {
+      if (!currentProjectId) {
+        throw new Error('Choose a project to import the rules into.');
+      }
+      return processService.importGruleRules({ ...params, projectId: currentProjectId });
+    },
+    onSuccess: (report) => {
+      if (!report.stored) return;
+      queryClient.invalidateQueries({ queryKey: ['decisions'] });
+      if (report.process_id) {
+        queryClient.invalidateQueries({ queryKey: ['definitions'] });
+      }
     },
   });
 };

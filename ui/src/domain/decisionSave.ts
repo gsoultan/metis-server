@@ -44,12 +44,16 @@ export function editorStateFrom(decision: ApiDecision): DecisionEditorState {
       name: output.name,
       type: output.type,
       values: output.values,
+      computed: output.computed || undefined,
     })),
     rules: (decision.rules || []).map((rule) => ({
       id: rule.id,
       input_entries: rule.inputs || [],
       // Stored results carry whatever the old editor wrote, quotes included.
-      output_entries: (rule.outputs || []).map((value) => formatOutputValue(value)),
+      // A computed cell is FEEL, where the quotes are the string's own.
+      output_entries: (rule.outputs || []).map((value, index) =>
+        decision.outputs?.[index]?.computed ? computedCell(value) : formatOutputValue(value),
+      ),
       description: rule.description || '',
     })),
     tests: testsFromPayload(decision.tests),
@@ -80,13 +84,22 @@ export function decisionPayload(state: DecisionEditorState): CreateDecisionPaylo
       name: output.name,
       type: output.type,
       values: output.values?.length ? output.values : undefined,
+      // Dropping it would store every expression as the text of a result.
+      computed: output.computed || undefined,
     })),
     rules: state.rules.map((rule) => ({
       id: rule.id,
       inputs: rule.input_entries,
       description: rule.description,
-      outputs: rule.output_entries.map((cell, index) => parseOutputValue(cell, outputs[index]?.type ?? 'string')),
+      outputs: rule.output_entries.map((cell, index) =>
+        outputs[index]?.computed ? cell.trim() : parseOutputValue(cell, outputs[index]?.type ?? 'string'),
+      ),
     })),
     tests: testsToPayload(state.tests, inputs, outputs),
   };
+}
+
+/** A computed cell as typed: the expression, or nothing. */
+function computedCell(value: unknown): string {
+  return value === null || value === undefined ? '' : String(value);
 }

@@ -48,3 +48,28 @@ describe('decisionPayload', () => {
     ]);
   });
 });
+
+// An imported Grule rule computes its result. Saving such a table from the
+// editor must keep it computing: without the flag every expression would be
+// stored as the text of a result, and a quoted literal would lose its quotes.
+describe('a computed result column', () => {
+  const computed: ApiDecision = {
+    ...stored,
+    tests: [],
+    outputs: [
+      { id: 'o1', label: 'Discount', name: 'discount', type: 'number', computed: true },
+      { id: 'o2', label: 'Tier', name: 'tier', type: 'string', computed: true },
+    ],
+    rules: [{ id: 'r1', inputs: ['> 1000'], outputs: ['amount * 0.1', '"gold"'], description: '' }],
+  };
+
+  it('is saved as it was stored when nothing was edited', () => {
+    const payload = decisionPayload(editorStateFrom(computed));
+    expect(payload.outputs).toEqual(computed.outputs);
+    expect(payload.rules).toEqual(computed.rules);
+  });
+
+  it('shows each cell as the expression, quotes included', () => {
+    expect(editorStateFrom(computed).rules[0].output_entries).toEqual(['amount * 0.1', '"gold"']);
+  });
+});

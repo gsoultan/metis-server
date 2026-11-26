@@ -724,6 +724,12 @@ export interface ApiDecisionOutput {
    * rank matches by this list, and refuse to evaluate without it.
    */
   values?: string[];
+  /**
+   * Each cell of this column is a FEEL expression worked out against the
+   * table's inputs (`Order_Total * 0.1`), not a value. A string literal keeps
+   * its quotes.
+   */
+  computed?: boolean;
 }
 
 /**
