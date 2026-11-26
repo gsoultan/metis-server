@@ -216,6 +216,8 @@ github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0 h1:QMILzF8BA7xftE4zVORkRrlv08m
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0/go.mod h1:+ZQ6iUL8+ATyxGDQNuRKpNwJFdGDUi0e7E1QL9MvI7U=
 github.com/gsoultan/metis v0.8.1-0.20261122095753-5e572d3090a1 h1:S1uLYYe9K6ectYCzi6k0bN0oTrdeomdDCX7/q0HO/fY=
 github.com/gsoultan/metis v0.8.1-0.20261122095753-5e572d3090a1/go.mod h1:OoCwYkbVRzkNVc1sD4EFpfV+c1/6Z9XHYKnvvYZRJyA=
+github.com/gsoultan/metis v0.8.1-0.20261126040251-e3f4f5e3c71c h1:WMJBvD7CrMULSAKE5ck6hjuNU4HLFb85fkcUgU5B/MQ=
+github.com/gsoultan/metis v0.8.1-0.20261126040251-e3f4f5e3c71c/go.mod h1:OoCwYkbVRzkNVc1sD4EFpfV+c1/6Z9XHYKnvvYZRJyA=
 github.com/gsoultan/panmail-sdk v0.1.2 h1:LxGjqvKoXwcFrf0PFRLUs0AO+npj3R3soQR+4ndZRKU=
 github.com/gsoultan/panmail-sdk v0.1.2/go.mod h1:nyPtNdRsP3kg4Vlk+3LJ2r3fBzwj1cahRpHGlcNMEaQ=
 github.com/gsoultan/storm v1.12.2 h1:7FPuJIRgaQWTHFSY6mx5UUNc1U0Y+Rr8wV26j9VU5As=

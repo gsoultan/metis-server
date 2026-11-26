@@ -82,6 +82,10 @@ describe('installGuidance', () => {
     expect(installGuidance('container')).toContain('owns the image');
   });
 
+  it("names metis-server's own upgrade command for a package", () => {
+    expect(installGuidance('package')).toContain('sudo metis-server upgrade --to');
+  });
+
   it('says to back up first, whatever the install', () => {
     for (const kind of ['package', 'container', 'binary'] as const) {
       expect(installGuidance(kind)).toContain('backup');

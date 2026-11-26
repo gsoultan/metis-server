@@ -183,7 +183,17 @@ sudo apt-get install ./metis-server_<version>_amd64.deb
 Or set `DATABASE_URL`, `JWT_SECRET` and `ENCRYPTION_KEY` in the env file and
 restart it, and `METIS_ROLE` for a `web` or `worker` machine. After an
 upgrade, take a backup, then `systemctl restart metis-server`; an upgrade
-never restarts it, and never re-enables a service you disabled. The packages are built by
+never restarts it, and never re-enables a service you disabled.
+
+The Upgrades page reports the release tag the binary was built from and
+compares it with this repository's releases. On a systemd host the package
+also installs `metis-server-upgrade.path`, enabled once on the first install
+that ships it, so the page's Upgrade button can install a newer release: it
+verifies the release's signature (this repository's release workflow) and
+checksums, takes a backup, installs the package and restarts the service.
+From a shell the same is `sudo metis-server upgrade --to vX.Y.Z`;
+`systemctl disable --now metis-server-upgrade.path` keeps upgrades to the
+shell. The packages are built by
 `.goreleaser.yaml`, which builds the UI first, and CI installs them on Debian, Rocky, Alpine and Arch and boots
 the deb under systemd against PostgreSQL on every pull request.
 
