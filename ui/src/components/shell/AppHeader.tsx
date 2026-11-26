@@ -56,7 +56,7 @@ export function AppHeader({ navOpened, onNavToggle, onHelpOpen, organizations, p
 
   return (
     <div className={classes.header}>
-      <Group h="100%" pr="md" justify="space-between" wrap="nowrap" gap="sm">
+      <Group h="100%" pr={10} justify="space-between" wrap="nowrap" gap="sm">
         <Group gap={0} wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
           <Box className={classes.brandSlot} style={{ width: brandWidth }} visibleFrom="sm">
             <Link to="/" className={classes.brand} aria-label="Metis home">
@@ -67,7 +67,7 @@ export function AppHeader({ navOpened, onNavToggle, onHelpOpen, organizations, p
             </Link>
           </Box>
           <Burger opened={navOpened} onClick={onNavToggle} hiddenFrom="sm" size="sm" ml="md" mr="sm" aria-label="Toggle navigation" />
-          <Box visibleFrom="xs" ml={{ base: 0, sm: 'md' }} style={{ minWidth: 0 }}>
+          <Box visibleFrom="xs" style={{ minWidth: 0 }}>
             <GlobalSearch />
           </Box>
         </Group>
