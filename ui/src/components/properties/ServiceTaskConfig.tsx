@@ -14,11 +14,12 @@ import {
 import { Play, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
+import { chosenConnection, connectionChoices, connectionPatch } from '../../domain/connectionChoice';
 import { clearedStepFields, stepFieldPatch, stepFieldValue } from '../../domain/connectorStep';
 import { CHANGE_IN_EXPERT_MODE } from '../../domain/disclosure';
 import { canChooseImplementation, implementationOptions } from '../../domain/implementationOptions';
 import { serviceImplementation, storedWebAddress, storedWorkerTopic } from '../../domain/serviceImplementation';
-import { useConnectors } from '../../hooks/useConnectors';
+import { useConnectorInstances, useConnectors } from '../../hooks/useConnectors';
 import { useAppStore } from '../../store/useAppStore';
 import { asText, asTextMap } from '../../types/bpmn';
 import type { NodeConfigProps } from '../PropertyPanel';
@@ -38,6 +39,7 @@ import { PropertySection } from './PropertySection';
 export function ServiceTaskConfig({ data, onUpdate }: NodeConfigProps) {
   const implementation = serviceImplementation(data as Record<string, unknown>);
   const { data: connectorsData } = useConnectors();
+  const { data: instancesData } = useConnectorInstances();
   const expertMode = useAppStore((state) => state.expertMode);
   const [testModalOpened, setTestModalOpened] = useState(false);
 
@@ -47,6 +49,9 @@ export function ServiceTaskConfig({ data, onUpdate }: NodeConfigProps) {
   // query — has them drawn here.
   const stepSchema = selectedConnector?.node_schema ?? [];
   const takesStepFields = stepSchema.length > 0;
+  const instances = instancesData?.instances ?? [];
+  const choices = selectedConnector ? connectionChoices(instances, selectedConnector.id) : [];
+  const chosenName = chosenConnection(data as Record<string, unknown>, instances);
 
   const options = implementationOptions(implementation);
   const chosen = options.find((option) => option.value === implementation);
@@ -73,7 +78,7 @@ export function ServiceTaskConfig({ data, onUpdate }: NodeConfigProps) {
         !data.connector_id ? (
           <PropertySection title="Choose a connector">
             <ConnectorCatalog
-              onSelect={(c) => onUpdate({ connector_id: c.id, connector_instance_id: '', ...clearedStepFields(data as Record<string, unknown>) })}
+              onSelect={(c) => onUpdate({ connector_id: c.id, connector_instance_id: '', connection: undefined, ...clearedStepFields(data as Record<string, unknown>) })}
             />
           </PropertySection>
         ) : (
@@ -101,7 +106,7 @@ export function ServiceTaskConfig({ data, onUpdate }: NodeConfigProps) {
                         variant="subtle"
                         color="red"
                         onClick={() =>
-                          onUpdate({ connector_id: undefined, connector_instance_id: undefined, ...clearedStepFields(data as Record<string, unknown>) })
+                          onUpdate({ connector_id: undefined, connector_instance_id: undefined, connection: undefined, ...clearedStepFields(data as Record<string, unknown>) })
                         }
                       >
                         <Trash2 size={14} />
@@ -111,6 +116,35 @@ export function ServiceTaskConfig({ data, onUpdate }: NodeConfigProps) {
                 </Paper>
               )}
             </PropertySection>
+
+            {selectedConnector && (
+              <PropertySection
+                title="Connection"
+                hint={
+                  choices.length === 0
+                    ? 'This project has no connection to this service yet. Add one under Connectors, then pick it here.'
+                    : 'Which of this project\'s connections the step uses. Each environment has its own connection of the same name.'
+                }
+              >
+                {choices.length > 0 && (
+                  <Select
+                    aria-label="Connection"
+                    data={[
+                      { value: '', label: choices.length === 1 ? `The project's connection (${choices[0].label})` : "The project's default connection" },
+                      ...choices,
+                      // A name the project no longer has stays visible, so the
+                      // step is not silently shown as using the default.
+                      ...(chosenName !== '' && !choices.some((c) => c.value === chosenName)
+                        ? [{ value: chosenName, label: `${chosenName} (not in this project)` }]
+                        : []),
+                    ]}
+                    value={chosenName}
+                    onChange={(val) => onUpdate(connectionPatch(val ?? ''))}
+                    allowDeselect={false}
+                  />
+                )}
+              </PropertySection>
+            )}
 
             {takesStepFields ? (
               <ConnectorStepFields schema={stepSchema} data={data as Record<string, unknown>} onUpdate={onUpdate} />

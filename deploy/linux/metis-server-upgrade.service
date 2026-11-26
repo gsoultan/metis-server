@@ -1,0 +1,19 @@
+# Runs `metis-server upgrade` for a request the Upgrades page left; started by
+# metis-server-upgrade.path, never enabled on its own. Root, because it installs a
+# package and restarts metis-server.service: the steps it takes, and what it
+# refuses, are in the engine's docs/upgrading.md. Progress goes to
+# /var/lib/metis-server/upgrade/status.json and to this unit's journal.
+[Unit]
+Description=Upgrade metis-server to the release asked for on the Upgrades page
+Documentation=https://github.com/gsoultan/metis-server
+ConditionPathExists=/var/lib/metis-server/upgrade-request.json
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/metis-server upgrade --from-request /var/lib/metis-server/upgrade-request.json
+# Download, backup, install and the new release's start, with room for a
+# large database's pg_dump.
+TimeoutStartSec=2h
+PrivateTmp=true

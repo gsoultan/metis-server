@@ -25,6 +25,12 @@ before:
     # GoReleaser Pro). The last test refuses to package a placeholder: no
     # index.html, no release.
     - sh -c "cd ui && bun install --frozen-lockfile && bun run build && test -f dist/index.html"
+    # release.json: what this release does to a database, read from the
+    # engine's migration list compiled into it, as the engine's release
+    # publishes it. An installation reads it before it upgrades, and the
+    # upgrade helper refuses a release without one. Listed in checksums.txt
+    # below, so the signature over that file covers it too.
+    - go run github.com/gsoultan/metis/cmd/releasemanifest -release {{ if .IsSnapshot }}{{ .Version }}{{ else }}{{ .Tag }}{{ end }} -out .release/release.json
 
 builds:
   - id: metis-server
@@ -101,13 +107,43 @@ nfpms:
         file_info:
           mode: 0644
         packager: deb
+      - src: deploy/linux/metis-server-upgrade.path
+        dst: /usr/lib/systemd/system/metis-server-upgrade.path
+        file_info:
+          mode: 0644
+        packager: deb
+      - src: deploy/linux/metis-server-upgrade.service
+        dst: /usr/lib/systemd/system/metis-server-upgrade.service
+        file_info:
+          mode: 0644
+        packager: deb
       - src: deploy/linux/metis-server.service
         dst: /usr/lib/systemd/system/metis-server.service
         file_info:
           mode: 0644
         packager: rpm
+      - src: deploy/linux/metis-server-upgrade.path
+        dst: /usr/lib/systemd/system/metis-server-upgrade.path
+        file_info:
+          mode: 0644
+        packager: rpm
+      - src: deploy/linux/metis-server-upgrade.service
+        dst: /usr/lib/systemd/system/metis-server-upgrade.service
+        file_info:
+          mode: 0644
+        packager: rpm
       - src: deploy/linux/metis-server.service
         dst: /usr/lib/systemd/system/metis-server.service
+        file_info:
+          mode: 0644
+        packager: archlinux
+      - src: deploy/linux/metis-server-upgrade.path
+        dst: /usr/lib/systemd/system/metis-server-upgrade.path
+        file_info:
+          mode: 0644
+        packager: archlinux
+      - src: deploy/linux/metis-server-upgrade.service
+        dst: /usr/lib/systemd/system/metis-server-upgrade.service
         file_info:
           mode: 0644
         packager: archlinux
@@ -166,9 +202,11 @@ nfpms:
 checksum:
   name_template: checksums.txt
   algorithm: sha256
+  extra_files:
+    - glob: .release/release.json
 
-# A keyless signature over checksums.txt, and through it over every archive
-# and package it lists, bound to the release workflow's OIDC identity, as the
+# A keyless signature over checksums.txt, and through it over every archive,
+# package and release.json it lists, bound to the release workflow's OIDC identity, as the
 # engine's is.
 signs:
   - id: checksums
@@ -202,6 +240,8 @@ changelog:
 
 release:
   draft: false
+  extra_files:
+    - glob: .release/release.json
   # A pre-release tag stays marked as one.
   prerelease: auto
   footer: |
