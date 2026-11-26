@@ -267,13 +267,19 @@ export function Connectors({ section = 'catalogue' }: { section?: ConnectorSecti
 
       {section === 'connections' && (
         <>
-          <PageHeader title={copy.title} description={copy.description} />
+          <PageHeader
+            title={copy.title}
+            description={copy.description}
+            actions={
+              <Button variant="default" onClick={refreshInstances} loading={instancesFetching}>
+                Refresh
+              </Button>
+            }
+          />
           <ConnectorInstanceTable
             instances={instances}
             connectors={connectors}
             expertMode={expertMode}
-            onRefresh={refreshInstances}
-            refreshing={instancesFetching}
             onTest={beginTest}
             onEdit={beginEdit}
             onDelete={remove}

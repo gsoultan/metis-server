@@ -109,7 +109,7 @@ export function CreateOutgoingWebhook({ opened, onClose, onSendTest }: Props) {
             </Stack>
           </Checkbox.Group>
           <Group justify="flex-end">
-            <Button variant="subtle" color="gray" onClick={onClose}>
+            <Button variant="default" onClick={onClose}>
               Cancel
             </Button>
             <Button onClick={submit} loading={create.isPending} disabled={!ready}>

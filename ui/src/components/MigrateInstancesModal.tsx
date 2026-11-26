@@ -452,7 +452,6 @@ export function MigrateInstancesModal({ source, target, processKey, onClose }: M
               <Stack key={index} gap={4}>
                 <Group gap="xs" wrap="nowrap" align="flex-start">
                   <Select
-                    size="xs"
                     aria-label="Step to decide"
                     placeholder="Step"
                     data={(plan?.removed_nodes ?? []).map((node) => ({ value: node, label: node }))}
@@ -462,7 +461,6 @@ export function MigrateInstancesModal({ source, target, processKey, onClose }: M
                     style={{ flex: 1 }}
                   />
                   <Select
-                    size="xs"
                     aria-label="What to do with it"
                     placeholder="Do what"
                     data={[
@@ -475,7 +473,6 @@ export function MigrateInstancesModal({ source, target, processKey, onClose }: M
                     style={{ width: 150 }}
                   />
                   <TextInput
-                    size="xs"
                     aria-label="Reason"
                     placeholder="Why — recorded on every instance"
                     value={row.reason}
@@ -483,7 +480,7 @@ export function MigrateInstancesModal({ source, target, processKey, onClose }: M
                     style={{ flex: 2 }}
                   />
                   <ActionIcon
-                    size="sm"
+                    size="input-sm"
                     variant="subtle"
                     color="gray"
                     onClick={() => edit({ type: 'actions', change: (current) => current.filter((_, i) => i !== index) })}
@@ -530,7 +527,6 @@ export function MigrateInstancesModal({ source, target, processKey, onClose }: M
           {rows.map((row, index) => (
             <Group key={row.id} gap="xs" wrap="nowrap">
               <Select
-                size="xs"
                 placeholder={`step in v${source?.version}`}
                 aria-label={`Node in the old version, row ${index + 1}`}
                 data={gone.map((change) => ({
@@ -547,7 +543,6 @@ export function MigrateInstancesModal({ source, target, processKey, onClose }: M
               />
               <ArrowRight size={14} />
               <Select
-                size="xs"
                 placeholder={`step in v${target?.version}`}
                 aria-label={`Node in the new version, row ${index + 1}`}
                 data={landing.map((node) => ({

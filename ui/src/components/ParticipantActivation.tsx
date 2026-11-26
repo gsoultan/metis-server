@@ -112,7 +112,7 @@ export function ParticipantActivation({ person, onClose }: { person: Participant
             </>
           )}
           <Group justify="flex-end">
-            <Button variant="subtle" color="gray" onClick={close}>Cancel</Button>
+            <Button variant="default" onClick={close}>Cancel</Button>
             <Button
               color={deactivating ? 'red' : 'indigo'}
               loading={setActive.isPending}

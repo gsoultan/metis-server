@@ -213,7 +213,7 @@ export function WebhookSettings({ asPage = false }: { asPage?: boolean } = {}) {
             onChange={(event) => setCorrelation(event.currentTarget.value)}
           />
           <Group justify="flex-end">
-            <Button variant="subtle" color="gray" onClick={form.close}>
+            <Button variant="default" onClick={form.close}>
               Cancel
             </Button>
             <Button onClick={submit} loading={create.isPending} disabled={!messageName.trim()}>

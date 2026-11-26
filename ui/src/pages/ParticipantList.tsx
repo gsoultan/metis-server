@@ -302,7 +302,7 @@ export function ParticipantList() {
             directory that names them again brings them back with their teams.
           </Text>
           <Group justify="flex-end">
-            <Button variant="subtle" color="gray" onClick={() => setRemoving(null)}>Cancel</Button>
+            <Button variant="default" onClick={() => setRemoving(null)}>Cancel</Button>
             <Button
               color="red"
               loading={removeParticipant.isPending}
@@ -347,7 +347,7 @@ export function ParticipantList() {
               data-autofocus
             />
             <Group justify="flex-end">
-              <Button variant="subtle" color="gray" onClick={() => setPasswordFor(null)}>Cancel</Button>
+              <Button variant="default" onClick={() => setPasswordFor(null)}>Cancel</Button>
               <Button type="submit" loading={setPassword.isPending} disabled={newPassword.trim().length === 0}>
                 Set password
               </Button>

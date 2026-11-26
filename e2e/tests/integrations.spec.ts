@@ -64,7 +64,7 @@ test.describe('connectors', () => {
   });
 
   test('a connector manifest can be installed from the example', async ({ page }) => {
-    await page.goto('/connectors');
+    await page.goto('/connectors?section=documents');
     await page.getByRole('button', { name: 'Install' }).click();
     const dialog = page.getByRole('dialog', { name: 'Install a connector' });
     await expect(dialog.getByRole('button', { name: 'Install' })).toBeDisabled();
@@ -78,7 +78,7 @@ test.describe('connectors', () => {
 test.describe('webhooks', () => {
   test('an outgoing webhook is created for the events chosen', async ({ page }) => {
     const name = uniqueName('E2E ledger');
-    await page.goto('/connectors');
+    await page.goto('/connectors?section=outgoing');
     await page.getByRole('button', { name: 'New outgoing webhook' }).click();
     const dialog = page.getByRole('dialog', { name: 'New outgoing webhook' });
     await dialog.getByRole('textbox', { name: 'Name' }).fill(name);
@@ -95,7 +95,7 @@ test.describe('webhooks', () => {
   });
 
   test('an outgoing webhook to a plain http address is refused', async ({ page }) => {
-    await page.goto('/connectors');
+    await page.goto('/connectors?section=outgoing');
     await page.getByRole('button', { name: 'New outgoing webhook' }).click();
     const dialog = page.getByRole('dialog', { name: 'New outgoing webhook' });
     await dialog.getByRole('textbox', { name: 'Name' }).fill('Not secure');
@@ -109,7 +109,7 @@ test.describe('webhooks', () => {
 
   test('an incoming webhook gets an address a partner can post to', async ({ page }) => {
     const name = uniqueName('E2E payments');
-    await page.goto('/connectors');
+    await page.goto('/connectors?section=incoming');
     await page.getByRole('button', { name: 'Add a webhook' }).click();
     const dialog = page.getByRole('dialog', { name: 'Add a webhook' });
     await dialog.getByRole('textbox', { name: 'Name' }).fill(name);

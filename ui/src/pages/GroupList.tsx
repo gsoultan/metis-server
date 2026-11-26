@@ -169,17 +169,17 @@ export function GroupList() {
                     <Table.Td>
                       <Group gap="xs" justify="flex-end">
                         <Tooltip label="Manage members">
-                          <ActionIcon aria-label={`Manage members of ${g.name}`} variant="light" color="teal" onClick={() => setMembersOf(g)}>
+                          <ActionIcon aria-label={`Manage members of ${g.name}`} variant="subtle" color="gray" onClick={() => setMembersOf(g)}>
                             <UserPlus size={16} />
                           </ActionIcon>
                         </Tooltip>
                         <Tooltip label="Edit group">
-                          <ActionIcon aria-label={`Edit ${g.name}`} variant="light" color="indigo" onClick={() => handleOpenModal(g)}>
+                          <ActionIcon aria-label={`Edit ${g.name}`} variant="subtle" color="gray" onClick={() => handleOpenModal(g)}>
                             <Edit2 size={16} />
                           </ActionIcon>
                         </Tooltip>
                         <Tooltip label="Delete group">
-                          <ActionIcon aria-label={`Delete ${g.name}`} variant="light" color="red" onClick={() => handleDelete(g)}>
+                          <ActionIcon aria-label={`Delete ${g.name}`} variant="subtle" color="red" onClick={() => handleDelete(g)}>
                             <Trash2 size={16} />
                           </ActionIcon>
                         </Tooltip>
@@ -229,7 +229,7 @@ export function GroupList() {
             searchable
           />
           <Group justify="flex-end" mt="md">
-            <Button variant="light" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button variant="default" onClick={() => setIsModalOpen(false)}>Cancel</Button>
             <Button onClick={handleSubmit} loading={createGroup.isPending || updateGroup.isPending} disabled={!name.trim()}>
               {editingGroup ? 'Update' : 'Create'}
             </Button>
