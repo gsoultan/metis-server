@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { processService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 import type { ImportSummary } from '../domain/participantImport';
+import type { ImportCheck } from '../domain/peopleImportCheck';
 import { errorMessage } from '../services/shared/errors';
 import type { HeldWork } from '../services/domains/participantService';
 
@@ -71,6 +72,23 @@ export const useImportParticipants = () => {
         color: 'red',
       });
     },
+  });
+};
+
+/**
+ * Reads a directory and reports what importing it would do, writing nothing.
+ *
+ * A mutation rather than a query: it is asked for when somebody presses Check,
+ * and reading an endpoint or a database is not something to repeat on focus.
+ * Errors are shown in the dialog, beside the source they are about.
+ */
+export const useCheckParticipantImport = () => {
+  const currentProjectId = useAppStore((state) => state.currentProjectId);
+  return useMutation<ImportCheck, Error, Record<string, unknown>>({
+    mutationFn: (source) =>
+      currentProjectId
+        ? processService.checkParticipantImport(currentProjectId, source)
+        : Promise.reject(new Error('No project selected')),
   });
 };
 
