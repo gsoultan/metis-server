@@ -216,7 +216,7 @@ export function ConnectorManifests({ asPage = false }: { asPage?: boolean } = {}
               </Button>
             )}
             <Group ml="auto">
-              <Button variant="subtle" color="gray" onClick={modal.close}>
+              <Button variant="default" onClick={modal.close}>
                 Cancel
               </Button>
               <Button onClick={submit} loading={install.isPending} disabled={!document.trim()}>

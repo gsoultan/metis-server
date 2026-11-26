@@ -166,9 +166,9 @@ function DecisionRow({
         </Group>
       </Table.Td>
       <Table.Td>
-        <Badge variant="outline" color="gray" radius="sm" styles={{ label: { textTransform: 'none' } }}>
+        <Text size="xs" ff="monospace" c="dimmed">
           {decision.key}
-        </Badge>
+        </Text>
       </Table.Td>
       <Table.Td>
         <VersionBadges decision={decision} />

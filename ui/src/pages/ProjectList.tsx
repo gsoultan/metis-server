@@ -183,20 +183,19 @@ export function ProjectList() {
                         <Group gap="xs" justify="flex-end">
                           <Button
                             size="xs"
-                            variant={selected ? 'filled' : 'light'}
-                            color="green"
+                            variant={selected ? 'light' : 'default'}
                             leftSection={<ExternalLink size={14} />}
                             onClick={() => select(project)}
                           >
                             {selected ? 'Selected' : 'Select'}
                           </Button>
                           <Tooltip label="Edit project">
-                            <ActionIcon aria-label={`Edit ${project.name}`} variant="light" color="indigo" onClick={() => handleOpenModal(project)}>
+                            <ActionIcon aria-label={`Edit ${project.name}`} variant="subtle" color="gray" onClick={() => handleOpenModal(project)}>
                               <Edit2 size={16} />
                             </ActionIcon>
                           </Tooltip>
                           <Tooltip label="Delete project">
-                            <ActionIcon aria-label={`Delete ${project.name}`} variant="light" color="red" onClick={() => handleDelete(project)}>
+                            <ActionIcon aria-label={`Delete ${project.name}`} variant="subtle" color="red" onClick={() => handleDelete(project)}>
                               <Trash2 size={16} />
                             </ActionIcon>
                           </Tooltip>
@@ -242,7 +241,7 @@ export function ProjectList() {
             onChange={(e) => setDescription(e.currentTarget.value)}
           />
           <Group justify="flex-end" mt="md">
-            <Button variant="light" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button variant="default" onClick={() => setIsModalOpen(false)}>Cancel</Button>
             <Button
               onClick={handleSubmit}
               loading={createProject.isPending || updateProject.isPending}

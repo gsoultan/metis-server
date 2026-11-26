@@ -162,7 +162,7 @@ export function AccountDialog({ opened, onClose, account, organization }: Accoun
           disabled={!viewer.mayChangeGlobalRoles}
         />
         <Group justify="flex-end" mt="md">
-          <Button variant="light" onClick={onClose}>Cancel</Button>
+          <Button variant="default" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSubmit} loading={saving} disabled={!canSubmit}>
             {account ? 'Update' : 'Create'}
           </Button>

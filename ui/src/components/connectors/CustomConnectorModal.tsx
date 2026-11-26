@@ -84,13 +84,14 @@ export function CustomConnectorModal({ opened, onClose, onSubmit, pending }: Cus
             {form.values.schema.map((_, index) => (
               <Paper key={index} withBorder p="xs" radius="md">
                 <Group gap="xs" grow align="flex-end">
-                  <TextInput label="Field key" placeholder="url" size="xs" {...form.getInputProps(`schema.${index}.key`)} />
-                  <TextInput label="Label" placeholder="Target URL" size="xs" {...form.getInputProps(`schema.${index}.label`)} />
-                  <Select label="Type" size="xs" data={FIELD_TYPES} {...form.getInputProps(`schema.${index}.type`)} />
+                  <TextInput label="Field key" placeholder="url" {...form.getInputProps(`schema.${index}.key`)} />
+                  <TextInput label="Label" placeholder="Target URL" {...form.getInputProps(`schema.${index}.label`)} />
+                  <Select label="Type" data={FIELD_TYPES} {...form.getInputProps(`schema.${index}.type`)} />
                   <ActionIcon
                     aria-label={`Remove field ${form.values.schema[index].key || index + 1}`}
                     color="red"
                     variant="light"
+                    size="input-sm"
                     onClick={() => form.removeListItem('schema', index)}
                   >
                     <Trash2 size={14} />
@@ -98,7 +99,7 @@ export function CustomConnectorModal({ opened, onClose, onSubmit, pending }: Cus
                 </Group>
               </Paper>
             ))}
-            <Button variant="light" size="xs" leftSection={<Plus size={14} />} onClick={addProperty}>
+            <Button variant="light" leftSection={<Plus size={14} />} onClick={addProperty}>
               Add a field
             </Button>
           </Stack>

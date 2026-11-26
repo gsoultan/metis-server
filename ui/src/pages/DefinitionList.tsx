@@ -176,7 +176,7 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
                       </Group>
                     </Table.Td>
                     <Table.Td>
-                      <Badge variant="outline" color="gray" radius="sm" styles={{ label: { textTransform: 'none' } }}>{def.key}</Badge>
+                      <Text size="xs" ff="monospace" c="dimmed">{def.key}</Text>
                     </Table.Td>
                     <Table.Td>
                       {/*
@@ -235,7 +235,6 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
                         <Button
                           size="xs"
                           variant="light"
-                          color="green"
                           leftSection={<Play size={14} />}
                           onClick={() => setPendingRun(def)}
                         >
