@@ -362,7 +362,7 @@ function TaskCard({ task, isSelected, onToggleSelection, onClaim, onComplete, on
       // The stripe is the urgency, so a late task reads as late from across the
       // room rather than from a number somebody has to interpret.
       borderLeft: `4px solid var(--mantine-color-${urgency.color}-6)`,
-      backgroundColor: isSelected ? 'var(--mantine-color-blue-0)' : undefined
+      backgroundColor: isSelected ? 'var(--mantine-color-blue-light)' : undefined
     }}>
       <Group justify="space-between" mb="xs">
         <Group gap="xs">
@@ -493,7 +493,7 @@ function KanbanView({ tasks, selectedTaskIds, onToggleSelection, onClaim, onUncl
     <Grid gap="md">
       {stages.map(col => (
         <Grid.Col span={{ base: 12, md: 4 }} key={col.id}>
-          <Paper p="md" radius="lg" bg="gray.0" withBorder h="100%" style={{ minHeight: 500 }}>
+          <Paper p="md" radius="lg" bg="var(--app-surface-subtle)" withBorder h="100%" style={{ minHeight: 500 }}>
             <Group justify="space-between" mb="md">
               <Group gap="xs">
                 <Badge color={col.color} variant="filled" size="sm">{col.title}</Badge>
@@ -779,7 +779,7 @@ export function TaskInbox() {
                 against — the wrapper, never the table itself. */}
             <Table.ScrollContainer minWidth={800} ref={tableScrollRef}>
               <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-                <Table.Thead bg="gray.0">
+                <Table.Thead>
                   <Table.Tr>
                     <Table.Th w={40}>
                       <Checkbox 

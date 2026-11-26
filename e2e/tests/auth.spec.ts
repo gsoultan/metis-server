@@ -94,6 +94,7 @@ test.describe('ending a session', () => {
 
   test('signing out in another tab signs this one out on its next request', async ({ page }) => {
     await signInThroughPage(page, SIGN_OUT_USER, SAMPLE_PASSWORD);
+    await page.getByRole('button', { name: 'Access', exact: true }).click();
     await page.getByRole('link', { name: 'Organizations' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Organizations' })).toBeVisible();
 

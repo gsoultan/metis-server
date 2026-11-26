@@ -13,5 +13,6 @@ function ConnectorsRoute() {
     setActiveTab('connectors')
   }, [setActiveTab])
 
-  return <Connectors />
+  const { section } = Route.useSearch()
+  return <Connectors section={section ?? 'catalogue'} />
 }

@@ -30,7 +30,7 @@ export function migrationLines(pending: UpgradeMigration[] | null): string[] {
 export function installGuidance(install: InstallKind): string {
   switch (install) {
     case 'package':
-      return 'Installed from a Linux package. Upgrade here, or from a shell with sudo metis upgrade --to <release>: either way the release is verified and a backup taken before anything stops.';
+      return 'Installed from a Linux package. Upgrade here, or from a shell with sudo metis-server upgrade --to <release> (sudo metis upgrade for an engine installed on its own): either way the release is verified and a backup taken before anything stops.';
     case 'container':
       return 'Running in a container. Take a backup, then move your deployment to the new image; Docker, Compose or Kubernetes owns the image, not Metis.';
     case 'binary':

@@ -8,8 +8,8 @@
 
 .header {
   height: 60px;
-  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  /* The frame tone, shared with the sidebar: no line between them. */
+  background-color: var(--app-frame);
 }
 
 .userButton {
@@ -85,20 +85,69 @@
   align-items: center;
   gap: 8px;
   height: 36px;
-  width: 200px;
+  width: 190px;
   max-width: 100%;
   padding-inline: 12px;
-  border: 1px solid light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4));
-  border-radius: var(--mantine-radius-sm);
-  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
   color: inherit;
 }
 
 .organizationButton:hover {
-  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
+  background-color: var(--app-surface-subtle);
 }
 
 .organizationButton:focus-visible {
   outline: 2px solid var(--mantine-color-blue-6);
   outline-offset: 2px;
+}
+
+/* --- brand: over the sidebar, the same width ------------------------------- */
+.brandSlot {
+  flex-shrink: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  transition: width 160ms ease;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-inline: 18px;
+  color: var(--mantine-color-text);
+  text-decoration: none;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--mantine-color-indigo-6);
+  outline-offset: 2px;
+  border-radius: var(--mantine-radius-md);
+}
+
+.brandMark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  /* indigo-8: the mark carries white, which needs a dark enough fill. */
+  background-color: var(--mantine-color-indigo-8);
+  color: var(--mantine-color-white);
+}
+
+.brandName {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brandSlot {
+    transition: none;
+  }
 }

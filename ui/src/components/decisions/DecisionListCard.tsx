@@ -97,7 +97,7 @@ function ListBody({ rows, loading, error, onRetry, search, onEdit, onHistory, on
   return (
     <Table.ScrollContainer minWidth={800}>
       <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-        <Table.Thead bg="gray.0">
+        <Table.Thead>
           <HeaderRow />
         </Table.Thead>
         <Table.Tbody>
@@ -166,9 +166,9 @@ function DecisionRow({
         </Group>
       </Table.Td>
       <Table.Td>
-        <Badge variant="outline" color="gray" radius="sm" styles={{ label: { textTransform: 'none' } }}>
+        <Text size="xs" ff="monospace" c="dimmed">
           {decision.key}
-        </Badge>
+        </Text>
       </Table.Td>
       <Table.Td>
         <VersionBadges decision={decision} />

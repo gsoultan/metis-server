@@ -98,7 +98,7 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
         <Card shadow="sm" radius="lg" withBorder p={0}>
           <Table.ScrollContainer minWidth={800}>
             <Table verticalSpacing="md" horizontalSpacing="xl">
-              <Table.Thead bg="gray.0"><HeaderRow /></Table.Thead>
+              <Table.Thead><HeaderRow /></Table.Thead>
               <Table.Tbody>
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Table.Tr key={i}>
@@ -141,7 +141,7 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
       <Card shadow="sm" radius="lg" withBorder p={0}>
         <Table.ScrollContainer minWidth={800}>
           <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-            <Table.Thead bg="gray.0"><HeaderRow /></Table.Thead>
+            <Table.Thead><HeaderRow /></Table.Thead>
             <Table.Tbody>
               {latestDefinitions.length === 0 ? (
                 <Table.Tr>
@@ -176,7 +176,7 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
                       </Group>
                     </Table.Td>
                     <Table.Td>
-                      <Badge variant="outline" color="gray" radius="sm" styles={{ label: { textTransform: 'none' } }}>{def.key}</Badge>
+                      <Text size="xs" ff="monospace" c="dimmed">{def.key}</Text>
                     </Table.Td>
                     <Table.Td>
                       {/*
@@ -235,7 +235,6 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
                         <Button
                           size="xs"
                           variant="light"
-                          color="green"
                           leftSection={<Play size={14} />}
                           onClick={() => setPendingRun(def)}
                         >

@@ -114,7 +114,7 @@ export function MembersModal({ group, opened, onClose }: MembersModalProps) {
                     <Table.Td>
                       <Group justify="flex-end">
                         <Tooltip label="Remove from group">
-                          <ActionIcon aria-label={`Remove ${who} from the group`} variant="light" color="red" onClick={() => remove(m.id, who)}>
+                          <ActionIcon aria-label={`Remove ${who} from the group`} variant="subtle" color="red" onClick={() => remove(m.id, who)}>
                             <UserMinus size={16} />
                           </ActionIcon>
                         </Tooltip>

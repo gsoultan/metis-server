@@ -158,7 +158,7 @@ export function ConnectorSetupWizard({
                   Once saved, any service task in this project can use this connection.
                 </Text>
               </Box>
-              <Paper withBorder p="md" radius="md" bg="gray.0" w="100%" ta="left">
+              <Paper withBorder p="md" radius="md" bg="var(--app-surface-subtle)" w="100%" ta="left">
                 <Text size="xs" fw={700} c="dimmed" mb={4}>CONNECTION</Text>
                 <Group justify="space-between">
                   <Text size="sm" fw={600}>{form.name}</Text>

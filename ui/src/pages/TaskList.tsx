@@ -211,7 +211,7 @@ export function TaskList() {
         <Box visibleFrom="sm">
         <Table.ScrollContainer minWidth={800}>
           <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-            <Table.Thead bg="gray.0">
+            <Table.Thead>
               <Table.Tr>
                 <Table.Th style={{ width: 40 }}>
                   {/*

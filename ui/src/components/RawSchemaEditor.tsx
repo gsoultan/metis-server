@@ -24,8 +24,8 @@ export function RawSchemaEditor({
         input: {
           fontFamily: 'monospace',
           fontSize: '11px',
-          backgroundColor: 'var(--mantine-color-dark-8)',
-          color: 'var(--mantine-color-gray-3)'
+          backgroundColor: 'var(--app-surface-subtle)',
+          color: 'var(--mantine-color-text)'
         }
       }}
       value={editor.text}

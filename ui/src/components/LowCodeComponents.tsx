@@ -115,12 +115,12 @@ export function VisualConditionBuilder({
   };
 
   return (
-    <Paper withBorder p="md" bg="gray.0" radius="md">
+    <Paper withBorder p="md" bg="var(--app-surface-subtle)" radius="md">
       <Stack gap="sm">
         <Text size="xs" fw={700} c="dimmed">{title}</Text>
 
         {tooRichToEdit && (
-          <Box p="xs" bg="white" style={{ border: '1px solid var(--mantine-color-yellow-4)', borderRadius: '4px' }}>
+          <Box p="xs" bg="var(--mantine-color-body)" style={{ border: '1px solid var(--mantine-color-yellow-4)', borderRadius: '4px' }}>
             <Stack gap={6}>
               <Text size="xs" fw={600}>This condition is too detailed for the simple editor</Text>
               <MantineCode block>{condition}</MantineCode>
@@ -191,7 +191,7 @@ export function VisualConditionBuilder({
         )}
 
         {!tooRichToEdit && (
-          <Box p="xs" bg="white" style={{ border: '1px dashed var(--mantine-color-gray-3)', borderRadius: '4px' }}>
+          <Box p="xs" bg="var(--mantine-color-body)" style={{ border: '1px dashed var(--mantine-color-gray-3)', borderRadius: '4px' }}>
             <Text size="xs" c="dimmed">Resulting expression:</Text>
             <MantineCode block>{condition || '(empty)'}</MantineCode>
           </Box>
@@ -233,7 +233,7 @@ export function VisualDataMapper({
   };
 
   return (
-    <Paper withBorder p="md" bg="gray.0" radius="md">
+    <Paper withBorder p="md" bg="var(--app-surface-subtle)" radius="md">
       <Stack gap="sm">
         <Group justify="space-between">
           <Text size="xs" fw={700} c="dimmed">{title}</Text>

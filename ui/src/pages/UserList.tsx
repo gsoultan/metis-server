@@ -153,7 +153,7 @@ export function UserList() {
             ) : (
             <Table.ScrollContainer minWidth={800}>
               <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-                <Table.Thead bg="gray.0">
+                <Table.Thead>
                   <Table.Tr>
                     <Table.Th>Account</Table.Th>
                     <Table.Th>Email</Table.Th>
@@ -195,19 +195,19 @@ export function UserList() {
                         <Table.Td>
                           <Group gap="xs" justify="flex-end">
                             <Tooltip label="Edit account">
-                              <ActionIcon aria-label={`Edit ${u.full_name || u.username}`} variant="light" color="indigo" onClick={() => openDialog(u)}>
+                              <ActionIcon aria-label={`Edit ${u.full_name || u.username}`} variant="subtle" color="gray" onClick={() => openDialog(u)}>
                                 <Edit2 size={16} />
                               </ActionIcon>
                             </Tooltip>
                             {u.id !== signedInId && (
                               <Tooltip label="Remove authenticator app">
-                                <ActionIcon aria-label={`Remove the authenticator app of ${u.full_name || u.username}`} variant="light" color="orange" onClick={() => handleResetSecondFactor(u)}>
+                                <ActionIcon aria-label={`Remove the authenticator app of ${u.full_name || u.username}`} variant="subtle" color="gray" onClick={() => handleResetSecondFactor(u)}>
                                   <ShieldOff size={16} />
                                 </ActionIcon>
                               </Tooltip>
                             )}
                             <Tooltip label="Delete account">
-                              <ActionIcon aria-label={`Delete ${u.full_name || u.username}`} variant="light" color="red" onClick={() => handleDelete(u)}>
+                              <ActionIcon aria-label={`Delete ${u.full_name || u.username}`} variant="subtle" color="red" onClick={() => handleDelete(u)}>
                                 <Trash2 size={16} />
                               </ActionIcon>
                             </Tooltip>
