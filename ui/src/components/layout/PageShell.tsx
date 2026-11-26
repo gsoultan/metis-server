@@ -1,6 +1,8 @@
 import { Box, Group, Stack, Text, Title } from '@mantine/core';
 import type { ReactNode } from 'react';
 
+import { useNavTrail } from '../shell/navigation';
+
 /**
  * Page layout primitives.
  *
@@ -47,22 +49,23 @@ interface PageHeaderProps {
  * dark. It also rendered every title as gradient text at weight 800.
  */
 export function PageHeader({ title, description, actions, meta }: PageHeaderProps) {
+  const trail = useNavTrail();
   return (
     <Box
       // Deliberately not a <header>: this is the title block of a page, not the
       // banner of the site. Rendering it as one put a second banner landmark on
       // every screen, inside the shell's own.
-      pb="lg"
-      style={{
-        // light-dark() works now that postcss-preset-mantine is installed;
-        // previously every surface hand-rolled a `theme === 'dark' ? …` ternary.
-        borderBottom: '1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4))',
-      }}
+      pb="xs"
     >
       <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
-        <Stack gap={6} style={{ minWidth: 0 }}>
+        <Stack gap={4} style={{ minWidth: 0 }}>
+          {trail.length > 1 && (
+            <Text size="xs" c="dimmed" aria-label="You are here">
+              {trail.slice(0, -1).join(' / ')}
+            </Text>
+          )}
           <Group gap="sm" align="center" wrap="nowrap">
-            <Title order={1}>{title}</Title>
+            <Title order={1} fz={24} lh={1.25}>{title}</Title>
             {meta}
           </Group>
           {description && (
@@ -73,7 +76,7 @@ export function PageHeader({ title, description, actions, meta }: PageHeaderProp
         </Stack>
 
         {actions && (
-          <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>
+          <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0, alignSelf: 'flex-end' }}>
             {actions}
           </Group>
         )}

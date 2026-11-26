@@ -3,8 +3,12 @@ import {
   parseThemeColor,
   type CSSVariablesResolver,
   type VariantColorsResolver,
-  createTheme, rem, Card, Button, Table, Paper, ActionIcon, Badge, TextInput, ThemeIcon } from '@mantine/core';
-import { DIMMED_DARK, DIMMED_LIGHT, SURFACE_SUBTLE_DARK, SURFACE_SUBTLE_LIGHT } from './palette';
+  createTheme, rem, Card, Button, Table, Paper, ActionIcon, Badge, TextInput, ThemeIcon,
+  Input, InputWrapper, Select, MultiSelect, NumberInput, PasswordInput, Textarea, Modal, SegmentedControl, Tabs } from '@mantine/core';
+import {
+  DARK_SCALE, DIMMED_DARK, DIMMED_LIGHT, FRAME_DARK, FRAME_LIGHT, PAGE_DARK, PAGE_LIGHT,
+  SURFACE_SUBTLE_DARK, SURFACE_SUBTLE_LIGHT,
+} from './palette';
 
 /**
  * Design tokens for Metis BPM.
@@ -103,11 +107,19 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
   light: {
     '--mantine-color-dimmed': DIMMED_LIGHT,
     '--app-surface-subtle': SURFACE_SUBTLE_LIGHT,
+    '--app-frame': FRAME_LIGHT,
+    '--app-page': PAGE_LIGHT,
+    '--app-panel-edge': '0 0 0 1px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.06)',
+    '--mantine-color-default-border': '#e4e4e7',
     ...readableColourVariables(),
   },
   dark: {
     '--mantine-color-dimmed': DIMMED_DARK,
     '--app-surface-subtle': SURFACE_SUBTLE_DARK,
+    '--app-frame': FRAME_DARK,
+    '--app-page': PAGE_DARK,
+    '--app-panel-edge': '0 0 0 1px rgba(255, 255, 255, 0.06)',
+    '--mantine-color-default-border': DARK_SCALE[5],
   },
 });
 
@@ -156,7 +168,8 @@ function readableColourVariables(): Record<string, string> {
 const FILLED_THROUGH_THE_RESOLVER = { variant: 'filled' } as const;
 
 export const theme = createTheme({
-  primaryColor: 'blue',
+  primaryColor: 'indigo',
+  colors: { dark: [...DARK_SCALE] },
   primaryShade: { light: 8, dark: 5 },
   // Picks black or white text per background luminance, so a colour this theme
   // does not name explicitly still gets readable text on it.
@@ -226,8 +239,39 @@ export const theme = createTheme({
       defaultProps: FILLED_THROUGH_THE_RESOLVER,
     }),
 
-    TextInput: TextInput.extend({
-      defaultProps: { radius: 'md' },
+    /*
+     * Forms. Every control is one height (36px, Mantine's sm), with the same
+     * radius and its label above it at the same weight and gap, so a form of
+     * mixed fields lines up on a grid instead of stepping. Widths come from the
+     * layout: a field fills its column.
+     */
+    Input: Input.extend({
+      defaultProps: { radius: 'md', size: 'sm' },
+    }),
+    InputWrapper: InputWrapper.extend({
+      styles: {
+        label: { fontWeight: 500, marginBottom: rem(6) },
+        description: { marginBottom: rem(6) },
+        error: { marginTop: rem(6) },
+      },
+    }),
+    TextInput: TextInput.extend({ defaultProps: { radius: 'md', size: 'sm' } }),
+    PasswordInput: PasswordInput.extend({ defaultProps: { radius: 'md', size: 'sm' } }),
+    NumberInput: NumberInput.extend({ defaultProps: { radius: 'md', size: 'sm' } }),
+    Select: Select.extend({ defaultProps: { radius: 'md', size: 'sm' } }),
+    MultiSelect: MultiSelect.extend({ defaultProps: { radius: 'md', size: 'sm' } }),
+    Textarea: Textarea.extend({ defaultProps: { radius: 'md', size: 'sm' } }),
+    SegmentedControl: SegmentedControl.extend({ defaultProps: { radius: 'md' } }),
+    Tabs: Tabs.extend({ defaultProps: { radius: 'md' } }),
+
+    /* Dialogs: one radius, centred, the page dimmed and softly blurred. */
+    Modal: Modal.extend({
+      defaultProps: {
+        radius: 'lg',
+        centered: true,
+        overlayProps: { backgroundOpacity: 0.4, blur: 2 },
+      },
+      styles: { title: { fontWeight: 600, fontSize: rem(16) } },
     }),
   },
 });

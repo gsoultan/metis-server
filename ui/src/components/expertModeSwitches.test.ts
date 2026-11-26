@@ -69,7 +69,7 @@ describe('the expert-mode switch', () => {
   it('is found everywhere it is', () => {
     // Guards the search itself: one that found nothing would pass below.
     expect(SWITCHES.map(([file]) => file)).toEqual(expect.arrayContaining([
-      'components/shell/AppHeader.tsx',
+      'components/shell/AccountMenu.tsx',
       'pages/Settings.tsx',
       'components/PropertyPanel.tsx',
       'pages/DecisionEditor.tsx',

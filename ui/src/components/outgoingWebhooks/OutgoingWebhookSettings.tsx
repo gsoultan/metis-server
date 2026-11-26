@@ -13,7 +13,8 @@
  * either way; the controls are hidden so nobody is shown one that only ever
  * says no.
  */
-import { ActionIcon, Badge, Button, Card, Group, Stack, Switch, Table, Text, Title, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Button, Group, Stack, Switch, Table, Text, Tooltip } from '@mantine/core';
+import { SectionFrame } from '../layout/SectionFrame';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { ListChecks, Plus, Send, Trash2, Webhook } from 'lucide-react';
@@ -34,7 +35,7 @@ import { CreateOutgoingWebhook } from './CreateOutgoingWebhook';
 import { OutgoingDeliveryLog } from './OutgoingDeliveryLog';
 import { SendOutgoingTest } from './SendOutgoingTest';
 
-export function OutgoingWebhookSettings() {
+export function OutgoingWebhookSettings({ asPage = false }: { asPage?: boolean } = {}) {
   const access = useViewerAccess();
   const isAdmin = hasRole(access, PRIVILEGED_ROLE);
   const { data } = useOutgoingWebhooks();
@@ -58,25 +59,22 @@ export function OutgoingWebhookSettings() {
   const sendTest = (hook: ApiOutgoingWebhook) => setTesting(hook);
 
   return (
-    <Card withBorder radius="lg" p="xl">
+    <SectionFrame
+      asPage={asPage}
+      title="Outgoing webhooks"
+      description="Tell other systems when something happens in your processes. Each delivery is signed, and retried until the receiver accepts it."
+      icon={<Webhook size={18} />}
+      action={
+        <>
+        {isAdmin && (
+          <Button size="xs" leftSection={<Plus size={14} />} onClick={form.open}>
+            New outgoing webhook
+          </Button>
+        )}
+        </>
+      }
+    >
       <Stack gap="lg">
-        <Group justify="space-between" align="flex-start">
-          <div>
-            <Group gap="xs">
-              <Webhook size={18} />
-              <Title order={4}>Outgoing webhooks</Title>
-            </Group>
-            <Text size="xs" c="dimmed">
-              Tell other systems when something happens in your processes. Each delivery is signed, and retried until
-              the receiver accepts it.
-            </Text>
-          </div>
-          {isAdmin && (
-            <Button size="xs" leftSection={<Plus size={14} />} onClick={form.open}>
-              New outgoing webhook
-            </Button>
-          )}
-        </Group>
 
         {webhooks.length === 0 ? (
           <Text size="sm" c="dimmed">
@@ -171,6 +169,6 @@ export function OutgoingWebhookSettings() {
           <SendOutgoingTest hook={testing} onClose={() => setTesting(null)} />
         </>
       )}
-    </Card>
+    </SectionFrame>
   );
 }
