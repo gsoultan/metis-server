@@ -139,7 +139,15 @@ test.describe('People', () => {
       mimeType: 'text/csv',
       buffer: Buffer.from(`username,display_name,email,groups\n${username},Pat Person,${username}@example.invalid,e2e-buyers\n`),
     });
-    await dialog.getByRole('button', { name: 'Import' }).click();
+    await dialog.getByRole('button', { name: 'Read file' }).click();
+    await expect(dialog.getByText('Read 1 row')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Match fields', exact: true }).click();
+    await expect(dialog.getByRole('combobox', { name: 'Your field for Username' })).toHaveValue('username');
+    await dialog.getByRole('button', { name: 'Check rows', exact: true }).click();
+    // An engine with the check lists the row first; an older one imports without it.
+    await dialog.getByRole('button', { name: /^(Import 1 person|Import without checking)$/ }).click();
+    await expect(dialog.getByText('1 added')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Done', exact: true }).click();
 
     await page.getByRole('textbox', { name: 'Search people' }).fill(username);
     await expect(page.getByRole('main').getByText('Pat Person').first()).toBeVisible();

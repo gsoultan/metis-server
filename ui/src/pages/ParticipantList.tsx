@@ -22,24 +22,22 @@ import { ParticipantActivation } from '../components/ParticipantActivation';
 import { DeviceCount } from '../components/DeviceCount';
 import { ParticipantDevices } from '../components/ParticipantDevices';
 import { useDeviceCounts } from '../hooks/useParticipantDevices';
-import { ParticipantImportModal } from '../components/ParticipantImportModal';
+import { PeopleImportWizard } from '../components/peopleImport/PeopleImportWizard';
 import { ParticipantSources } from '../components/ParticipantSources';
 import { PeopleSwitchOver } from '../components/PeopleSwitchOver';
 import { EmptyState, ErrorState, TableLoadingState } from '../components/state';
 import {
   STANDING_LABELS,
   standingOf,
-  type ImportSummary,
   type Participant,
 } from '../domain/participantImport';
 import { hasRole } from '../domain/access';
 import { MIN_PASSWORD_LENGTH } from '../domain/password';
-import { PRIVILEGED_ROLE } from '../domain/roles';
+import { PRIVILEGED_ROLE, QUERY_AUTHOR_ROLE } from '../domain/roles';
 import { matchesQuery } from '../domain/textSearch';
 import { useAppStore } from '../store/useAppStore';
 import { useViewerAccess } from '../hooks/useViewerAccess';
 import {
-  useImportParticipants,
   useParticipants,
   useRemoveParticipant,
   useSetParticipantPassword,
@@ -87,10 +85,8 @@ export function ParticipantList() {
   const [removing, setRemoving] = useState<string | null>(null);
   // The person being deactivated or activated.
   const [activating, setActivating] = useState<string | null>(null);
-  const importParticipants = useImportParticipants();
   const [query, setQuery] = useState('');
   const [importOpen, setImportOpen] = useState(false);
-  const [result, setResult] = useState<ImportSummary | null>(null);
   const [, startTransition] = useTransition();
 
   const everyone: Participant[] = data?.participants ?? [];
@@ -102,15 +98,6 @@ export function ParticipantList() {
   const people = query
     ? everyone.filter((p) => matchesQuery(query, p.username, p.display_name ?? '', p.email ?? ''))
     : everyone;
-
-  const runImport = async (body: Record<string, unknown>) => {
-    try {
-      setResult(await importParticipants.mutateAsync(body));
-    } catch {
-      // The hook reports it; the dialog stays open so the source can be
-      // corrected rather than retyped.
-    }
-  };
 
   if (error) {
     return <ErrorState error={error} action="load the people in this project" onRetry={() => refetch()} />;
@@ -126,7 +113,7 @@ export function ParticipantList() {
             variant="filled"
             color="indigo"
             leftSection={<Upload size={16} />}
-            onClick={() => { setResult(null); setImportOpen(true); }}
+            onClick={() => setImportOpen(true)}
           >
             Import
           </Button>
@@ -372,14 +359,11 @@ export function ParticipantList() {
       <ParticipantActivation person={activatingPerson} onClose={() => setActivating(null)} />
       <ParticipantDevices person={devicesOf} onClose={() => setDevicesOf(null)} />
 
-      <ParticipantImportModal
+      <PeopleImportWizard
         opened={importOpen}
         onClose={() => setImportOpen(false)}
-        running={importParticipants.isPending}
-        result={result}
-        onImportFile={(file) => runImport({ kind: 'csv', file })}
-        onImportHTTP={(url, method) => runImport({ kind: 'http', url, method })}
-        onImportPostgres={(dsn, query2) => runImport({ kind: 'postgres', dsn, query: query2 })}
+        allowDatabase={isAdmin || hasRole(access, QUERY_AUTHOR_ROLE)}
+        allowKeepInSync={isAdmin}
       />
     </Stack>
   );

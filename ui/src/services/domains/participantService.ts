@@ -5,6 +5,7 @@ import { RequestError, requestJSON } from "../shared/rest";
 import { reportSessionRefused } from "../shared/sessionRefusal";
 import { raiseIfRefused } from "../raise";
 import type { ImportSummary, Participant } from "../../domain/participantImport";
+import type { ImportCheck } from "../../domain/peopleImportCheck";
 import type { PersonDevice } from "./peopleService";
 
 interface ListParticipantsResponse {
@@ -26,6 +27,43 @@ interface ListParticipantGroupsResponse {
 
 interface ImportParticipantsResponse extends ImportSummary {
   err?: string;
+}
+
+interface CheckParticipantImportResponse extends ImportCheck {
+  err?: string;
+}
+
+/**
+ * Sends a directory to the import or the check.
+ *
+ * A file goes as multipart, with the mapping as a JSON field beside it; the
+ * other sources go as JSON. Not requestJSON for the file: it sets a JSON
+ * content type, and multipart needs the browser to set its own boundary.
+ */
+async function sendDirectory<T extends { err?: string }>(
+  path: string,
+  projectId: string,
+  source: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<T> {
+  if (source.kind !== "csv" || !(source.file instanceof File)) {
+    return requestJSON<T>(path, { method: "POST", body: { project_id: projectId, ...source }, signal });
+  }
+  const form = new FormData();
+  form.append("project_id", projectId);
+  form.append("file", source.file);
+  if (source.mapping && Object.keys(source.mapping).length > 0) {
+    form.append("mapping", JSON.stringify(source.mapping));
+  }
+  if (source.move_open_tasks === true) form.append("move_open_tasks", "true");
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}${path}`, { method: "POST", headers: getAuthHeaders(), body: form, signal });
+  if (response.status === 401) reportSessionRefused(token);
+  const body = (await response.json().catch(() => ({}))) as T;
+  if (!response.ok) {
+    throw new RequestError(body.err || statusMessage(response.status), response.status);
+  }
+  return body;
 }
 
 interface RemoveParticipantResponse {
@@ -65,33 +103,18 @@ export const participantService = {
    * summary either way.
    */
   async importParticipants(projectId: string, source: Record<string, unknown>, signal?: AbortSignal) {
-    if (source.kind === "csv" && source.file instanceof File) {
-      const form = new FormData();
-      form.append("project_id", projectId);
-      form.append("file", source.file);
-      // Not requestJSON: it sets a JSON content type, and multipart needs the
-      // browser to set its own boundary.
-      const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/participants/import`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: form,
-        signal,
-      });
-      if (response.status === 401) reportSessionRefused(token);
-      const body = (await response.json().catch(() => ({}))) as ImportParticipantsResponse;
-      if (!response.ok) {
-        throw new RequestError(body.err || statusMessage(response.status), response.status);
-      }
-      return raiseIfRefused(body) as ImportSummary;
-    }
-
-    const body = await requestJSON<ImportParticipantsResponse>("/participants/import", {
-      method: "POST",
-      body: { project_id: projectId, ...source },
-      signal,
-    });
+    const body = await sendDirectory<ImportParticipantsResponse>("/participants/import", projectId, source, signal);
     return raiseIfRefused(body) as ImportSummary;
+  },
+
+  /**
+   * Reads a directory and says what importing it would do, writing nothing.
+   *
+   * The same body as an import, so what was checked is what gets imported.
+   */
+  async checkParticipantImport(projectId: string, source: Record<string, unknown>, signal?: AbortSignal) {
+    const body = await sendDirectory<CheckParticipantImportResponse>("/participants/import/check", projectId, source, signal);
+    return raiseIfRefused(body) as ImportCheck;
   },
 
   /**
