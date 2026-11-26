@@ -55,6 +55,9 @@ export const PRIVILEGED_ROLE = 'ADMIN';
 /** The role that authors and deploys models, and imports the people they assign work to. */
 export const DESIGNER_ROLE = 'DESIGNER';
 
+/** Writes SQL that runs against a connected database: lookups, and a People directory read by query. */
+export const QUERY_AUTHOR_ROLE = 'QUERY_AUTHOR';
+
 /** The role that runs the system day to day, and takes the tasks nobody was named for. */
 export const OPERATOR_ROLE = 'OPERATOR';
 

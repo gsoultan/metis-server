@@ -27,6 +27,12 @@ export interface ImportProblem {
 export interface ImportSummary {
   created: number;
   updated: number;
+  /** Rows that matched somebody already up to date. */
+  unchanged?: number;
+  /** People found by external ID whose username changed. */
+  renamed?: number;
+  /** Open tasks carried from an old username to a new one. */
+  tasks_moved?: number;
   groups: number;
   problems?: ImportProblem[];
 }
@@ -69,6 +75,10 @@ export function summarise(summary: ImportSummary): string {
   const parts: string[] = [];
   if (summary.created > 0) parts.push(`${summary.created} added`);
   if (summary.updated > 0) parts.push(`${summary.updated} updated`);
+  if ((summary.renamed ?? 0) > 0) parts.push(`${summary.renamed} renamed`);
+  if ((summary.tasks_moved ?? 0) > 0) {
+    parts.push(`${summary.tasks_moved} open ${summary.tasks_moved === 1 ? 'task' : 'tasks'} moved`);
+  }
   if (summary.groups > 0) parts.push(`${summary.groups} ${summary.groups === 1 ? 'team' : 'teams'} created`);
   if (parts.length === 0) parts.push('nothing changed');
   return parts.join(', ');
@@ -88,7 +98,7 @@ export function needsReview(summary: ImportSummary): boolean {
 /** The tone the result should be shown in. */
 export function outcomeTone(summary: ImportSummary): 'success' | 'partial' | 'none' {
   if (needsReview(summary)) return 'partial';
-  if (summary.created === 0 && summary.updated === 0) return 'none';
+  if (summary.created === 0 && summary.updated === 0 && (summary.renamed ?? 0) === 0) return 'none';
   return 'success';
 }
 
@@ -110,6 +120,8 @@ export interface Participant {
   email?: string;
   active: boolean;
   has_credentials: boolean;
+  /** Their id in the customer's own application, when an import set one. */
+  external_id?: string;
   /** The teams this person is in, which is what a task's candidate groups name. */
   groups?: string[];
 }
