@@ -1,6 +1,6 @@
-import { Button, Group, Modal, Stack, Stepper, Text } from '@mantine/core';
+import { Alert, Button, Group, Modal, Stack, Stepper, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { ChevronLeft, ChevronRight, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, Upload } from 'lucide-react';
 import { useState } from 'react';
 
 import type { ImportSummary } from '../../domain/participantImport';
@@ -8,6 +8,7 @@ import {
   guessMapping,
   mappingIsComplete,
   renamesHoldingTasks,
+  usesMetisNames,
   writableCount,
   type FieldMapping,
   type ImportCheck,
@@ -25,6 +26,7 @@ import {
 import { useCheckParticipantImport, useImportParticipants } from '../../hooks/useParticipants';
 import { useSaveSource } from '../../hooks/useParticipantSources';
 import { errorMessage } from '../../services/shared/errors';
+import { RequestError } from '../../services/shared/rest';
 import { CheckStep } from './CheckStep';
 import { DoneStep } from './DoneStep';
 import { MatchStep } from './MatchStep';
@@ -56,6 +58,8 @@ export function PeopleImportWizard({ opened, onClose, allowDatabase, allowKeepIn
   const [testError, setTestError] = useState<string | null>(null);
   const [mapping, setMapping] = useState<FieldMapping>({});
   const [check, setCheck] = useState<ImportCheck | null>(null);
+  // The engine has no check endpoint: it is older than this page.
+  const [uncheckable, setUncheckable] = useState(false);
   const [moveOpenTasks, setMoveOpenTasks] = useState(false);
   const [result, setResult] = useState<ImportSummary | null>(null);
   const [saved, setSaved] = useState(false);
@@ -71,6 +75,7 @@ export function PeopleImportWizard({ opened, onClose, allowDatabase, allowKeepIn
     setTestError(null);
     setMapping({});
     setCheck(null);
+    setUncheckable(false);
     setMoveOpenTasks(false);
     setResult(null);
     setSaved(false);
@@ -112,8 +117,15 @@ export function PeopleImportWizard({ opened, onClose, allowDatabase, allowKeepIn
   const runCheck = async () => {
     try {
       setCheck(await checkImport.mutateAsync(sourceRequest(draft, mapping, moveOpenTasks)));
+      setUncheckable(false);
       setStep(STEP.check);
     } catch (error) {
+      if (error instanceof RequestError && error.status === 404) {
+        setCheck(null);
+        setUncheckable(true);
+        setStep(STEP.check);
+        return;
+      }
       notifications.show({ color: 'red', title: 'The rows could not be checked', message: errorMessage(error, 'Nothing was imported.') });
     }
   };
@@ -178,6 +190,15 @@ export function PeopleImportWizard({ opened, onClose, allowDatabase, allowKeepIn
         {step === STEP.match && tested && (
           <MatchStep fields={tested.fields} sample={tested.sample} mapping={mapping} onChange={(next) => { setMapping(next); setCheck(null); }} />
         )}
+        {step === STEP.check && uncheckable && (
+          <Alert color="blue" variant="light" radius="md" icon={<Info size={16} />} title="This Metis engine cannot check rows first">
+            <Text size="sm">
+              {usesMetisNames(mapping)
+                ? 'It is older than this page. The import writes the rows directly, and lists the ones it refused afterwards.'
+                : "It is older than this page and reads columns by Metis's own field names only. Rename your columns to match, or update the engine, to import with this matching."}
+            </Text>
+          </Alert>
+        )}
         {step === STEP.check && check && (
           <CheckStep check={check} moveOpenTasks={moveOpenTasks} onMoveOpenTasks={setMoveOpenTasks} />
         )}
@@ -210,7 +231,12 @@ export function PeopleImportWizard({ opened, onClose, allowDatabase, allowKeepIn
                 Check rows
               </Button>
             )}
-            {step === STEP.check && (
+            {step === STEP.check && uncheckable && (
+              <Button loading={runImport.isPending} disabled={!usesMetisNames(mapping)} onClick={importNow}>
+                Import without checking
+              </Button>
+            )}
+            {step === STEP.check && !uncheckable && (
               <Button
                 loading={runImport.isPending}
                 disabled={toImport === 0}

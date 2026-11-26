@@ -200,3 +200,13 @@ function csvCell(value: string): string {
 export function renamesHoldingTasks(check: ImportCheck): number {
   return check.rows.filter((row) => row.outcome === 'renamed' && (row.open_tasks ?? 0) > 0).length;
 }
+
+/**
+ * Whether every mapped field already has Metis's own name.
+ *
+ * An engine older than this page reads columns by Metis's names and ignores a
+ * mapping, so only such a source can be imported there without a check.
+ */
+export function usesMetisNames(mapping: FieldMapping): boolean {
+  return Object.keys(mappingForRequest(mapping)).length === 0;
+}

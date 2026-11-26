@@ -7,6 +7,7 @@ import {
   openTasksOnRenames,
   refusedRowsCsv,
   renamesHoldingTasks,
+  usesMetisNames,
   visibleRows,
   writableCount,
   type CheckedRow,
@@ -32,6 +33,11 @@ describe('guessMapping', () => {
 describe('mappingForRequest', () => {
   test('drops fields mapped to their own name and blank ones', () => {
     expect(mappingForRequest({ username: 'username', external_id: ' id ', email: '' })).toEqual({ external_id: 'id' });
+  });
+
+  test('knows when a mapping is only Metis names', () => {
+    expect(usesMetisNames({ username: 'username', email: 'email' })).toBe(true);
+    expect(usesMetisNames({ username: 'login' })).toBe(false);
   });
 
   test('needs a username', () => {
