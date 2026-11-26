@@ -46,7 +46,7 @@ export function RawSchemaCard({
       </Box>
 
       {!expertMode && (
-        <Paper withBorder p="xl" radius="md" bg="blue.0" style={{ borderStyle: 'dashed' }}>
+        <Paper withBorder p="xl" radius="md" bg="var(--mantine-color-blue-light)" style={{ borderStyle: 'dashed' }}>
           <Stack gap="xs" align="center" py="md">
             <Info size={32} color="var(--mantine-color-blue-4)" />
             <Text fw={700} ta="center">Simplified view</Text>

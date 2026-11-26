@@ -131,7 +131,7 @@ export function OrganizationList() {
         ) : (
         <Table.ScrollContainer minWidth={800}>
           <Table verticalSpacing="md" horizontalSpacing="xl" highlightOnHover>
-            <Table.Thead bg="gray.0">
+            <Table.Thead>
               <Table.Tr>
                 <Table.Th>Organization</Table.Th>
                 <Table.Th>Description</Table.Th>
@@ -201,12 +201,12 @@ export function OrganizationList() {
                             Members
                           </Button>
                           <Tooltip label="Edit organization">
-                            <ActionIcon aria-label={`Edit ${org.name}`} variant="light" color="indigo" onClick={() => handleOpenModal(org)}>
+                            <ActionIcon aria-label={`Edit ${org.name}`} variant="subtle" color="gray" onClick={() => handleOpenModal(org)}>
                               <Edit2 size={16} />
                             </ActionIcon>
                           </Tooltip>
                           <Tooltip label="Delete organization">
-                            <ActionIcon aria-label={`Delete ${org.name}`} variant="light" color="red" onClick={() => handleDelete(org)}>
+                            <ActionIcon aria-label={`Delete ${org.name}`} variant="subtle" color="red" onClick={() => handleDelete(org)}>
                               <Trash2 size={16} />
                             </ActionIcon>
                           </Tooltip>
@@ -250,7 +250,7 @@ export function OrganizationList() {
             onChange={(e) => setDescription(e.currentTarget.value)}
           />
           <Group justify="flex-end" mt="md">
-            <Button variant="light" onClick={closeModal}>Cancel</Button>
+            <Button variant="default" onClick={closeModal}>Cancel</Button>
             <Button onClick={handleSubmit} loading={createOrg.isPending || updateOrg.isPending} disabled={!name.trim()}>
               {editingOrg ? 'Update' : 'Create'}
             </Button>

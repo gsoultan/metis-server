@@ -5,31 +5,38 @@ import { expect, test } from '../support/test';
  * throw. The feature specs go deeper; this is the floor under all of them, so a
  * page that stops rendering is caught even where nothing else looks at it.
  */
-const pages: Array<{ link: string; path: RegExp; heading: string }> = [
+const pages: Array<{ link: string; group?: string; path: RegExp; heading: string }> = [
   { link: 'Dashboard', path: /\/$/, heading: 'Dashboard' },
-  { link: 'My Inbox', path: /\/inbox/, heading: 'Task Inbox' },
-  { link: 'All Tasks', path: /\/tasks/, heading: 'All Tasks' },
+  { link: 'Inbox', path: /\/inbox/, heading: 'Task Inbox' },
+  { link: 'All tasks', path: /\/tasks/, heading: 'All Tasks' },
   { link: 'People', path: /\/people/, heading: 'People' },
   { link: 'Processes', path: /\/models/, heading: 'Processes' },
   { link: 'Decisions', path: /tab=decisions/, heading: 'Decisions' },
-  { link: 'Connectors', path: /\/connectors/, heading: 'Connectors' },
-  { link: 'SDK Sandbox', path: /\/sdk/, heading: 'SDK Sandbox' },
+  { link: 'Catalogue', group: 'Connectors', path: /\/connectors\?section=catalogue/, heading: 'Catalogue' },
+  { link: 'My connections', group: 'Connectors', path: /section=connections/, heading: 'My connections' },
+  { link: 'From documents', group: 'Connectors', path: /section=documents/, heading: 'Connectors from a document' },
+  { link: 'Outgoing webhooks', group: 'Connectors', path: /section=outgoing/, heading: 'Outgoing webhooks' },
+  { link: 'Incoming webhooks', group: 'Connectors', path: /section=incoming/, heading: 'Incoming webhooks' },
+  { link: 'SDK sandbox', path: /\/sdk/, heading: 'SDK Sandbox' },
   { link: 'Instances', path: /\/instances/, heading: 'Process Instances' },
   { link: 'Archive', path: /\/archive/, heading: 'Archive' },
   { link: 'Releases', path: /\/releases/, heading: 'Releases' },
-  { link: 'Projects', path: /\/projects/, heading: 'Projects' },
-  { link: 'Organizations', path: /\/organizations/, heading: 'Organizations' },
-  { link: 'Groups', path: /\/groups/, heading: 'Groups' },
-  { link: 'Users', path: /\/users/, heading: 'Users' },
-  { link: 'Audit log', path: /\/audit/, heading: 'Audit' },
-  { link: 'Upgrades', path: /\/upgrades/, heading: 'Upgrades' },
+  { link: 'Projects', group: 'Access', path: /\/projects/, heading: 'Projects' },
+  { link: 'Organizations', group: 'Access', path: /\/organizations/, heading: 'Organizations' },
+  { link: 'Groups', group: 'Access', path: /\/groups/, heading: 'Groups' },
+  { link: 'Users', group: 'Access', path: /\/users/, heading: 'Users' },
+  { link: 'Audit log', group: 'Access', path: /\/audit/, heading: 'Audit' },
+  { link: 'Upgrades', group: 'System', path: /\/upgrades/, heading: 'Upgrades' },
 ];
 
 test.describe('main navigation', () => {
-  for (const { link, path, heading } of pages) {
+  for (const { link, group, path, heading } of pages) {
     test(`${link} opens`, async ({ page }) => {
       await page.goto('/');
-      await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: link, exact: true }).click();
+      const nav = page.getByRole('navigation', { name: 'Main navigation' });
+      // A page under a sub-menu is reached by opening the sub-menu first.
+      if (group) await nav.getByRole('button', { name: group, exact: true }).click();
+      await nav.getByRole('link', { name: link, exact: true }).click();
 
       await expect(page).toHaveURL(path);
       await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toContainText(heading);

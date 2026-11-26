@@ -1,0 +1,28 @@
+.main {
+  background-color: var(--app-frame);
+  min-height: 100dvh;
+}
+
+.panel {
+  min-height: calc(100dvh - 60px - 10px);
+  margin: 0 10px 10px 0;
+  border-radius: 14px;
+  background-color: var(--app-page);
+  box-shadow: var(--app-panel-edge);
+  overflow: hidden;
+}
+
+/* The designer's canvas wants the whole window: square corners, no inset. */
+.panel[data-full-bleed] {
+  margin: 0;
+  border-radius: 0;
+  min-height: calc(100dvh - 60px);
+}
+
+/* On a phone the sidebar is a drawer, so the panel runs edge to edge. */
+@media (max-width: 48em) {
+  .panel {
+    margin: 0;
+    border-radius: 0;
+  }
+}

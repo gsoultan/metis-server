@@ -136,7 +136,7 @@ export function CreationWizard({ opened, onClose, onCreateProcess, onCreateDecis
               error={key.includes(' ') || /[^a-z0-9_]/.test(key) ? "Invalid key format" : null}
             />
             
-            <Paper withBorder p="md" bg="gray.0" radius="md" mt="md">
+            <Paper withBorder p="md" bg="var(--app-surface-subtle)" radius="md" mt="md">
                <Group wrap="nowrap" align="flex-start">
                   <ThemeIcon variant="light" color="indigo" size="sm">
                     <Info size={14} />
@@ -215,10 +215,10 @@ function TypeButton({ icon, title, description, color, onClick, active }: TypeBu
         padding: theme.spacing.xl,
         borderRadius: theme.radius.lg,
         border: `2px solid ${active ? `var(--mantine-color-${color}-6)` : 'var(--mantine-color-default-border)'}`,
-        backgroundColor: active ? `var(--mantine-color-${color}-0)` : 'white',
+        backgroundColor: active ? `var(--mantine-color-${color}-0)` : 'var(--mantine-color-body)',
         transition: 'all 0.2s ease',
         '&:hover': {
-          backgroundColor: 'var(--mantine-color-gray-0)',
+          backgroundColor: 'var(--app-surface-subtle)',
           borderColor: active ? `var(--mantine-color-${color}-6)` : 'var(--mantine-color-gray-3)',
           transform: 'translateY(-2px)',
         }

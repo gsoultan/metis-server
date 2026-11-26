@@ -110,7 +110,7 @@ function NodeCard({ node, requiredBy, onOpen }: { node: GraphNode; requiredBy: s
       radius="md"
       p="sm"
       style={{ cursor: onOpen ? 'pointer' : undefined }}
-      bg={node.inCycle ? 'var(--mantine-color-red-0)' : undefined}
+      bg={node.inCycle ? 'var(--mantine-color-red-light)' : undefined}
     >
       <Stack gap={4}>
         <Group gap="xs" wrap="nowrap" justify="space-between">

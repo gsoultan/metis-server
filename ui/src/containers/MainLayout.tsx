@@ -11,12 +11,13 @@ import { selectionNeedsUpdate, resolveSelection } from '../domain/activeSelectio
 import { useOrganizations, useSwitchOrganization } from '../hooks/useOrganization';
 import { useProjects } from '../hooks/useProcess';
 import { useAppStore } from '../store/useAppStore';
+import classes from './MainLayout.module.css';
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
-const NAV_WIDTH_EXPANDED = 240;
+const NAV_WIDTH_EXPANDED = 236;
 const NAV_WIDTH_COLLAPSED = 68;
 
 /**
@@ -101,26 +102,28 @@ export function MainLayout({ children }: MainLayoutProps) {
       padding={0}
       transitionDuration={160}
     >
-      <AppShell.Header withBorder={false}>
+      <AppShell.Header withBorder={false} bg="var(--app-frame)">
         <AppHeader
           navOpened={navOpened}
           onNavToggle={toggleNav}
           onHelpOpen={openHelp}
           organizations={organizations}
           projects={projects}
+          brandWidth={sidebarExpanded ? NAV_WIDTH_EXPANDED : NAV_WIDTH_COLLAPSED}
         />
       </AppShell.Header>
 
-      <AppShell.Navbar withBorder={false} aria-label="Main navigation">
+      <AppShell.Navbar withBorder={false} bg="var(--app-frame)" aria-label="Main navigation">
         <Sidebar />
       </AppShell.Navbar>
 
-      <AppShell.Main
-        style={{
-          backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))',
-          minHeight: '100vh',
-        }}
-      >
+      <AppShell.Main className={classes.main}>
+        {/*
+          The page sits on a rounded panel inset from the frame that the top
+          bar and sidebar share. Tone and a faint edge separate them, where
+          lines used to.
+        */}
+        <div className={classes.panel} data-full-bleed={isDesigner || undefined}>
         <RuntimeBanner />
         <UpgradeBanner />
         {/*
@@ -153,6 +156,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             children
           )}
         </Box>
+        </div>
       </AppShell.Main>
 
       <HelpDrawer opened={helpOpened} onClose={closeHelp} />
