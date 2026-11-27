@@ -54,7 +54,12 @@ dayjs.extend(relativeTime);
 const PAGE_SIZES = ['25', '50', '100'];
 const COLUMNS = 5;
 
-export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id: string) => void, hideHeader?: boolean }) {
+export function DefinitionList({ onEditModel, hideHeader, onAddExamples }: {
+  onEditModel?: (id: string) => void;
+  hideHeader?: boolean;
+  /** Offered beside "Create your first process" while the list is empty. */
+  onAddExamples?: () => void;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -154,7 +159,12 @@ export function DefinitionList({ onEditModel, hideHeader }: { onEditModel?: (id:
                       <Text ta="center" c="dimmed" maw={400}>
                         Start by creating your first process definition to automate your workflow.
                       </Text>
-                      <Button variant="subtle" mt="md" onClick={() => setWizardOpened(true)}>Create your first process</Button>
+                      <Group gap="sm" mt="md">
+                        <Button variant="subtle" onClick={() => setWizardOpened(true)}>Create your first process</Button>
+                        {onAddExamples && (
+                          <Button variant="light" color="indigo" onClick={onAddExamples}>Add the worked examples</Button>
+                        )}
+                      </Group>
                     </Stack>
                   </Table.Td>
                 </Table.Tr>
