@@ -214,8 +214,8 @@ github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4 h1:9ZJYjPEJpcleIKcqysXOo1
 github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4/go.mod h1:0xydIeg2omQ9DH6zYMP24Kk57793rnLUvP8fwdbFvz8=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0 h1:QMILzF8BA7xftE4zVORkRrlv08m12St3csK4RsyRgRs=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0/go.mod h1:+ZQ6iUL8+ATyxGDQNuRKpNwJFdGDUi0e7E1QL9MvI7U=
-github.com/gsoultan/metis v0.9.3 h1:SHvCalIy+hN7RbiC0mp1L94KS6GQpzC0jPUicebo6m4=
-github.com/gsoultan/metis v0.9.3/go.mod h1:NY3YrVfOfED/oSWOWQ0PEj6vNY5eG9Kbct2pvCSmtwg=
+github.com/gsoultan/metis v0.9.4 h1:M2EyTrpQ8bWDk3snCVAPZsvFXJ+llP6cO6WNHX9OL94=
+github.com/gsoultan/metis v0.9.4/go.mod h1:+oJikfk8sCkhFpweZizWl+CPNrZEh2fjkfntdkDfNUg=
 github.com/gsoultan/panmail-sdk v0.1.2 h1:LxGjqvKoXwcFrf0PFRLUs0AO+npj3R3soQR+4ndZRKU=
 github.com/gsoultan/panmail-sdk v0.1.2/go.mod h1:nyPtNdRsP3kg4Vlk+3LJ2r3fBzwj1cahRpHGlcNMEaQ=
 github.com/gsoultan/storm v1.12.2 h1:7FPuJIRgaQWTHFSY6mx5UUNc1U0Y+Rr8wV26j9VU5As=
@@ -433,8 +433,8 @@ google.golang.org/genproto/googleapis/api v0.0.0-20261012220534-4341edf3f941 h1:
 google.golang.org/genproto/googleapis/api v0.0.0-20261012220534-4341edf3f941/go.mod h1:AuGAdi9KnXss7xbLxIKhCvk+Ro/SxpET/iS45DNYN+M=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20261005182115-fad411399dd8 h1:0SXBqli5dnuCKMjI/X3FM226zEaEa0GUcSCJtN1vL2o=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20261005182115-fad411399dd8/go.mod h1:OaIUM3+LpYcK2GXM4FTmhWoIq371Owdr+Cc7/BsYHHc=
-google.golang.org/grpc v1.84.0 h1:soMyaPJ8pAak5PIQ0DGBUir0XRo2fRoMqhNWMLlLxO0=
-google.golang.org/grpc v1.84.0/go.mod h1:ljCht0DrxQrXBDRTZp52Qxh3Ffk8CdYm2sj4O2QN2C0=
+google.golang.org/grpc v1.85.0 h1:BPBCfuVRQ1qvBhKDOq9uvQllMvO59rKsYhXpp7Dd8vw=
+google.golang.org/grpc v1.85.0/go.mod h1:0rQrOD58yjal/0EaVbGBANindixsCZNQPDV3VKtaKuQ=
 google.golang.org/protobuf v1.36.12 h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc=
 google.golang.org/protobuf v1.36.12/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
