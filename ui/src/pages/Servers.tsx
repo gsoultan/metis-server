@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { PageHeader } from '../components/PageHeader';
 import { AddServerDialog } from '../components/servers/AddServerDialog';
+import { MachineRole } from '../components/servers/MachineRole';
 import { WaitingMachines } from '../components/servers/WaitingMachines';
 import { waitingJoins } from '../domain/machineJoins';
 import {
@@ -12,8 +13,6 @@ import {
   machineStatus,
   missingWorkWarning,
   quietFor,
-  roleColor,
-  roleLabel,
   statusColor,
   type Machine,
 } from '../domain/machines';
@@ -106,9 +105,7 @@ export function Servers() {
                       </Text>
                     </Table.Td>
                     <Table.Td>
-                      <Badge variant="light" color={roleColor(m.role)}>
-                        {roleLabel(m.role)}
-                      </Badge>
+                      <MachineRole machine={m} machines={machines} now={now} />
                     </Table.Td>
                     <Table.Td>
                       <Code>{m.address || '—'}</Code>

@@ -26,6 +26,14 @@ export function useForgetMachine() {
   });
 }
 
+export function useChangeMachineRole() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, role }: { id: string; role: string }) => machineService.changeRole(id, role),
+    onSuccess: () => void client.invalidateQueries({ queryKey: machinesKey }),
+  });
+}
+
 /** The machines being added, asked again every 5 seconds: one that ran the command shows up quickly. */
 export function useMachineJoins() {
   const token = useAppStore((state) => state.token);

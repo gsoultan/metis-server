@@ -12,7 +12,14 @@ export interface Machine {
   version?: string;
   started_at: string;
   last_seen_at: string;
+  /** The role an administrator asked it to take; it starts again in it. */
+  requested_role?: string;
+  /** Its operator set its role (METIS_ROLE, or no config.yaml): the page cannot change it. */
+  role_fixed?: boolean;
 }
+
+/** The roles a machine can be switched between, in the order the menu shows them. */
+export const MACHINE_ROLES = ['all', 'web', 'worker'] as const;
 
 /** A process says it is running every 15 seconds; three missed is worth showing. */
 const RUNNING_WITHIN_SECONDS = 45;
@@ -89,4 +96,30 @@ export function roleColor(role: string): string {
 export function missingWorkWarning(machines: Machine[], serverNow: Date): boolean {
   const live = machines.filter((m) => machineStatus(m, serverNow) !== 'stopped');
   return live.length > 0 && !live.some((m) => m.role === 'worker' || m.role === 'all');
+}
+
+/** The role a machine runs next: the one it was asked to take, or its own. */
+export function nextRole(m: Machine): string {
+  return m.requested_role || m.role;
+}
+
+/**
+ * Whether the Servers page offers to switch this machine, and if not why:
+ * its operator fixed its role, or it is not running to hear the ask.
+ */
+export function roleChange(m: Machine, serverNow: Date): 'open' | 'fixed' | 'quiet' {
+  if (m.role_fixed) return 'fixed';
+  if (machineStatus(m, serverNow) !== 'running') return 'quiet';
+  return 'open';
+}
+
+/**
+ * Whether switching machine id to role would leave no running machine doing
+ * background work. The server refuses it too; the page says so first.
+ */
+export function leavesNoWorker(machines: Machine[], id: string, role: string, serverNow: Date): boolean {
+  if (role !== 'web') return false;
+  return !machines.some(
+    (m) => m.id !== id && machineStatus(m, serverNow) !== 'stopped' && nextRole(m) !== 'web',
+  );
 }
