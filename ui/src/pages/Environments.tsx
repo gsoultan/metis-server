@@ -36,6 +36,8 @@ import {
   type ServerIdentity,
 } from '../domain/serverConnections';
 import { useServerConnectionActions, useServerConnections } from '../hooks/useServerConnections';
+import { PlatformAdminOnly } from '../components/access/PlatformAdminOnly';
+import { platformAdminRefusal } from '../domain/platformAdmin';
 import { useTranslation } from '../i18n/context';
 import { useAppStore } from '../store/useAppStore';
 
@@ -81,6 +83,16 @@ export function Environments() {
   const server = data?.server;
   const connections = data?.connections ?? [];
   const upstream = connections.filter((c) => c.side === 'upstream');
+
+  const refusal = platformAdminRefusal(error?.message);
+  if (refusal !== null) {
+    return (
+      <Stack gap="xl">
+        <PageHeader title={t('page.environments.title')} description={t('page.environments.subtitle')} />
+        <PlatformAdminOnly refusal={refusal} />
+      </Stack>
+    );
+  }
 
   return (
     <Stack gap="xl">

@@ -17,6 +17,8 @@ import {
   type Machine,
 } from '../domain/machines';
 import { useForgetMachine, useMachineJoins, useMachines } from '../hooks/useMachines';
+import { PlatformAdminOnly } from '../components/access/PlatformAdminOnly';
+import { platformAdminRefusal } from '../domain/platformAdmin';
 import { useTranslation } from '../i18n/context';
 
 /**
@@ -34,6 +36,7 @@ export function Servers() {
   const joins = useMachineJoins();
   const waiting = waitingJoins(joins.data?.joins ?? []);
   const [adding, setAdding] = useState(false);
+  const refusal = platformAdminRefusal(error?.message);
 
   const remove = async (m: Machine) => {
     try {
@@ -48,6 +51,15 @@ export function Servers() {
       });
     }
   };
+
+  if (refusal !== null) {
+    return (
+      <Stack gap="xl">
+        <PageHeader title={t('page.servers.title')} description={t('page.servers.subtitle')} />
+        <PlatformAdminOnly refusal={refusal} />
+      </Stack>
+    );
+  }
 
   return (
     <Stack gap="xl">

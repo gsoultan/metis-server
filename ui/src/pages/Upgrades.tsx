@@ -13,6 +13,8 @@ import {
   progressView,
   upgradeInFlight,
 } from '../domain/upgrades';
+import { PlatformAdminOnly } from '../components/access/PlatformAdminOnly';
+import { platformAdminRefusal } from '../domain/platformAdmin';
 import { useTranslation } from '../i18n/context';
 import { upgradeService, type UpgradeProgress, type UpgradeStatus } from '../services/domains/upgradeService';
 import { UPGRADE_STATUS_KEY } from './upgradeStatusKey';
@@ -42,6 +44,16 @@ export function Upgrades() {
     mutationFn: () => upgradeService.checkNow(),
     onSuccess: (next) => queryClient.setQueryData(UPGRADE_STATUS_KEY, next),
   });
+  const refusal = inFlight ? null : platformAdminRefusal(error?.message);
+
+  if (refusal !== null) {
+    return (
+      <Stack gap="xl">
+        <PageHeader title={t('page.upgrades.title')} description={t('page.upgrades.subtitle')} />
+        <PlatformAdminOnly refusal={refusal} />
+      </Stack>
+    );
+  }
 
   return (
     <Stack gap="xl">
