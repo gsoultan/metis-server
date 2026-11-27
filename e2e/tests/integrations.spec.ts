@@ -163,7 +163,7 @@ test.describe('upgrades', () => {
   test('says what is running and checks for a newer release on request', async ({ page, api }) => {
     await page.goto('/upgrades');
     if (!(await installationWide(api))) {
-      await expect(page.getByRole('alert', { name: 'The upgrade status could not be read' })).toContainText('METIS_PLATFORM_ADMINS');
+      await expect(page.getByRole('alert', { name: 'Only a platform administrator can see this page' })).toContainText('METIS_PLATFORM_ADMINS');
       return;
     }
     await expect(page.getByText('Running', { exact: true })).toBeVisible();
