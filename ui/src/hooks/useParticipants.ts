@@ -6,7 +6,7 @@ import { useAppStore } from '../store/useAppStore';
 import type { ImportSummary } from '../domain/participantImport';
 import type { ImportCheck } from '../domain/peopleImportCheck';
 import { errorMessage } from '../services/shared/errors';
-import type { HeldWork } from '../services/domains/participantService';
+import type { HeldWork, ParticipantsPageQuery } from '../services/domains/participantService';
 
 type ParticipantsResult = Awaited<ReturnType<typeof processService.listParticipants>>;
 
@@ -27,6 +27,30 @@ export const useParticipants = (options: { limit?: number } = {}) => {
         ? processService.listParticipants(currentProjectId, signal, { limit })
         : Promise.resolve({ participants: [], err: '' } as ParticipantsResult),
     enabled: !!currentProjectId && !!token,
+  });
+};
+
+type ParticipantsPageResult = Awaited<ReturnType<typeof processService.listParticipantsPage>>;
+
+/**
+ * One page of the People list, searched on the server.
+ *
+ * Keyed beneath the project's key, so an import, a removal or a password
+ * change refreshes the page on screen with the rest of the directory.
+ */
+export const useParticipantsPage = (query: ParticipantsPageQuery) => {
+  const currentProjectId = useAppStore((state) => state.currentProjectId);
+  const token = useAppStore((state) => state.token);
+  return useQuery({
+    queryKey: ['participants', currentProjectId, 'page', query],
+    queryFn: ({ signal }) =>
+      currentProjectId && token
+        ? processService.listParticipantsPage(currentProjectId, query, signal)
+        : Promise.resolve({ participants: [], err: '', pageInfo: undefined } as ParticipantsPageResult),
+    enabled: !!currentProjectId && !!token,
+    // Hold the current rows while the next page loads, so the table does not
+    // collapse into a skeleton on every click or keystroke.
+    placeholderData: (previous) => previous,
   });
 };
 

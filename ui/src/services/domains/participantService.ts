@@ -10,7 +10,16 @@ import type { PersonDevice } from "./peopleService";
 
 interface ListParticipantsResponse {
   participants?: Participant[];
+  /** Present when a page was asked for, from an engine that pages the directory. */
+  page?: { total: number; page: number; page_size: number; has_more: boolean };
   err?: string;
+}
+
+/** One page of the directory: which page, how many per page, and a search. */
+export interface ParticipantsPageQuery {
+  page: number;
+  pageSize: number;
+  search: string;
 }
 
 /** A project's People group, as the server lists it. */
@@ -83,6 +92,37 @@ export const participantService = {
       { method: "GET", signal },
     );
     return { participants: response.participants ?? [], err: response.err };
+  },
+
+  /**
+   * One page of a project's People, alphabetically by username, searched on
+   * the server by username, display name and email.
+   *
+   * `pageInfo` is the window the server served, after clamping, so the
+   * controls show what came back rather than what was asked for. An engine
+   * that does not page the directory answers everybody and no page; the
+   * caller then has the whole list to search itself.
+   */
+  async listParticipantsPage(projectId: string, query: ParticipantsPageQuery, signal?: AbortSignal) {
+    const params = new URLSearchParams({
+      project_id: projectId,
+      page: String(query.page),
+      page_size: String(query.pageSize),
+    });
+    if (query.search) params.set("q", query.search);
+    const response = await requestJSON<ListParticipantsResponse>(`/participants?${params}`, { method: "GET", signal });
+    return {
+      participants: response.participants ?? [],
+      err: response.err,
+      pageInfo: response.page
+        ? {
+            total: response.page.total,
+            page: response.page.page,
+            pageSize: response.page.page_size,
+            hasMore: response.page.has_more,
+          }
+        : undefined,
+    };
   },
 
   /** A project's People groups, by name: the teams a step can offer its task to. */
