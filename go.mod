@@ -4,7 +4,7 @@ go 1.27.4
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/gsoultan/metis v0.9.1
+	github.com/gsoultan/metis v0.9.2
 	github.com/jackc/pgx/v5 v5.13.0
 	golang.org/x/crypto v0.59.0
 )

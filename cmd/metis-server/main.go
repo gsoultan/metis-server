@@ -40,7 +40,15 @@ const (
 const shutdownTimeout = 20 * time.Second
 
 func main() {
-	if err := run(); err != nil {
+	err := run()
+	// An administrator switched this machine between web and worker on the
+	// Servers page: the engine kept the new role in config.yaml and stopped,
+	// and run shut the front down after it. Starting again reads the role.
+	if errors.Is(err, engine.ErrRestart) {
+		slog.Info("metis-server starts again in the role the Servers page asked for")
+		err = engine.Restart()
+	}
+	if err != nil {
 		slog.Error("metis-server stopped", "error", err)
 		os.Exit(1)
 	}
