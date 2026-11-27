@@ -6,6 +6,8 @@ import {
   CopyButton,
   Modal,
   Group,
+  Pagination,
+  Select,
   Stack,
   Table,
   Text,
@@ -14,7 +16,8 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { KeyRound, Search, Trash2, Upload, UserCheck, UserCircle, UserX, Users } from 'lucide-react';
-import { useState, useTransition } from 'react';
+import { useDebouncedValue } from '@mantine/hooks';
+import { useState } from 'react';
 
 import { PageHeader } from '../components/PageHeader';
 import { NewPasswordInput } from '../components/password/NewPasswordInput';
@@ -38,13 +41,18 @@ import { matchesQuery } from '../domain/textSearch';
 import { useAppStore } from '../store/useAppStore';
 import { useViewerAccess } from '../hooks/useViewerAccess';
 import {
-  useParticipants,
+  useParticipantsPage,
   useRemoveParticipant,
   useSetParticipantPassword,
 } from '../hooks/useParticipants';
 import { useTranslation } from '../i18n/context';
 
 const COLUMNS = 4;
+
+const PAGE_SIZES = ['25', '50', '100'];
+
+/** How long typing pauses before the search is sent: one request per pause, not per key. */
+const SEARCH_PAUSE_MS = 250;
 
 const STANDING_COLOURS: Record<string, string> = {
   ready: 'green',
@@ -73,7 +81,14 @@ export function ParticipantList() {
   const [devicesOf, setDevicesOf] = useState<{ id: string; name: string } | null>(null);
   const projectId = useAppStore((state) => state.currentProjectId);
   const signInAddress = projectId ? `${window.location.origin}/p/?project=${encodeURIComponent(projectId)}` : '';
-  const { data, isLoading, error, refetch } = useParticipants();
+  const [query, setQuery] = useState('');
+  const [sentQuery] = useDebouncedValue(query.trim(), SEARCH_PAUSE_MS);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  // A project's directory can be thousands of people, so the table shows a
+  // page of it and the search runs on the server, where it finds people on
+  // pages the table is not showing.
+  const { data, isLoading, error, refetch } = useParticipantsPage({ page, pageSize, search: sentQuery });
   const removeParticipant = useRemoveParticipant();
   const setPassword = useSetParticipantPassword();
   // The person whose password is being set, and what has been typed so far.
@@ -85,19 +100,26 @@ export function ParticipantList() {
   const [removing, setRemoving] = useState<string | null>(null);
   // The person being deactivated or activated.
   const [activating, setActivating] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
   const [importOpen, setImportOpen] = useState(false);
-  const [, startTransition] = useTransition();
 
-  const everyone: Participant[] = data?.participants ?? [];
+  const listed: Participant[] = data?.participants ?? [];
+  const pageInfo = data?.pageInfo;
+  // An engine that does not page the directory answers everybody and no page;
+  // the search then runs over what came back, as it did before paging.
+  const people = pageInfo || !sentQuery
+    ? listed
+    : listed.filter((p) => matchesQuery(sentQuery, p.username, p.display_name ?? '', p.email ?? ''));
+  const total = pageInfo?.total ?? people.length;
+  const pageCount = pageInfo ? Math.max(1, Math.ceil(pageInfo.total / pageInfo.pageSize)) : 1;
+  // A removal can empty the last page; the page before it is the one that exists.
+  if (pageInfo && listed.length === 0 && pageInfo.total > 0 && page > pageCount) {
+    setPage(pageCount);
+  }
   // Held for the confirmation's wording: it names the person rather than saying
   // "this participant", because the row it is about has already scrolled.
-  const removedPerson = everyone.find((person) => person.id === removing) ?? null;
-  const passwordPerson = everyone.find((person) => person.id === passwordFor) ?? null;
-  const activatingPerson = everyone.find((person) => person.id === activating) ?? null;
-  const people = query
-    ? everyone.filter((p) => matchesQuery(query, p.username, p.display_name ?? '', p.email ?? ''))
-    : everyone;
+  const removedPerson = listed.find((person) => person.id === removing) ?? null;
+  const passwordPerson = listed.find((person) => person.id === passwordFor) ?? null;
+  const activatingPerson = listed.find((person) => person.id === activating) ?? null;
 
   if (error) {
     return <ErrorState error={error} action="load the people in this project" onRetry={() => refetch()} />;
@@ -146,21 +168,23 @@ export function ParticipantList() {
             leftSection={<Search size={16} />}
             value={query}
             onChange={(e) => {
-              const value = e.currentTarget.value;
-              startTransition(() => setQuery(value));
+              setQuery(e.currentTarget.value);
+              setPage(1);
             }}
             w={320}
           />
-          {everyone.length > 0 && (
+          {total > 0 && (
             <Text size="xs" c="dimmed">
-              {query ? `${people.length} of ${everyone.length} match` : `${everyone.length} in this project`}
+              {sentQuery
+                ? `${total.toLocaleString()} ${total === 1 ? 'matches' : 'match'}`
+                : `${total.toLocaleString()} in this project`}
             </Text>
           )}
         </Group>
 
         {isLoading && <TableLoadingState columns={COLUMNS} />}
 
-        {!isLoading && everyone.length === 0 && (
+        {!isLoading && people.length === 0 && !sentQuery && (
           <EmptyState
             icon={Users}
             title="Nobody here yet"
@@ -168,7 +192,15 @@ export function ParticipantList() {
           />
         )}
 
-        {!isLoading && everyone.length > 0 && (
+        {!isLoading && people.length === 0 && sentQuery !== '' && (
+          <EmptyState
+            icon={Search}
+            title="Nobody matches"
+            description={`Nobody in this project has "${sentQuery}" in their name, username or email.`}
+          />
+        )}
+
+        {!isLoading && people.length > 0 && (
           <Table.ScrollContainer minWidth={720}>
             <Table verticalSpacing="sm" highlightOnHover>
               <Table.Thead>
@@ -271,6 +303,50 @@ export function ParticipantList() {
               </Table.Tbody>
             </Table>
           </Table.ScrollContainer>
+        )}
+
+        {pageInfo && pageInfo.total > pageInfo.pageSize && (
+          <Group justify="space-between" px="md" py="sm" wrap="wrap" gap="sm">
+            <Text size="sm" c="dimmed">
+              {`${(pageInfo.page - 1) * pageInfo.pageSize + 1}–` +
+                `${Math.min(pageInfo.page * pageInfo.pageSize, pageInfo.total)}` +
+                ` of ${pageInfo.total.toLocaleString()} people`}
+            </Text>
+            <Group gap="sm" wrap="nowrap">
+              <Select
+                aria-label="People per page"
+                data={PAGE_SIZES}
+                value={String(pageSize)}
+                onChange={(value) => {
+                  if (!value) return;
+                  setPageSize(Number(value));
+                  setPage(1);
+                }}
+                size="xs"
+                w={92}
+                allowDeselect={false}
+                comboboxProps={{ withinPortal: true }}
+              />
+              <Pagination
+                // The server reports the page it served, after clamping; using
+                // the requested value would let the highlight disagree with
+                // what is on screen.
+                value={pageInfo.page}
+                onChange={setPage}
+                total={pageCount}
+                size="sm"
+                withEdges
+                getControlProps={(control) => ({
+                  'aria-label': {
+                    first: 'First page',
+                    last: 'Last page',
+                    next: 'Next page',
+                    previous: 'Previous page',
+                  }[control] ?? undefined,
+                })}
+              />
+            </Group>
+          </Group>
         )}
       </Card>
 
