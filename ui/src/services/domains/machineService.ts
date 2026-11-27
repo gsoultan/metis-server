@@ -21,6 +21,16 @@ export const machineService = {
     raiseIfRefused(await requestJSON<{ err?: string }>(`/machines/${encodeURIComponent(id)}`, { method: 'DELETE' }));
   },
 
+  /** Asks running machine id to start again in role. */
+  async changeRole(id: string, role: string): Promise<void> {
+    raiseIfRefused(
+      await requestJSON<{ err?: string }>(`/machines/${encodeURIComponent(id)}/role`, {
+        method: 'POST',
+        body: JSON.stringify({ role }),
+      }),
+    );
+  },
+
   /** The machines being added that have not finished, and the server's own time. */
   async listJoins(signal?: AbortSignal): Promise<{ joins: MachineJoin[]; now: Date }> {
     const reply = raiseIfRefused(

@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'bun:test';
 
-import { durationLabel, machineStatus, missingWorkWarning, quietFor, roleLabel, type Machine } from './machines';
+import {
+  durationLabel,
+  leavesNoWorker,
+  machineStatus,
+  missingWorkWarning,
+  nextRole,
+  quietFor,
+  roleChange,
+  roleLabel,
+  type Machine,
+} from './machines';
 
 const now = new Date('2026-11-21T12:00:00Z');
 
@@ -58,5 +68,43 @@ describe('warning about missing work', () => {
     expect(missingWorkWarning([machine('web', 5), machine('worker', 5)], now)).toBe(false);
     expect(missingWorkWarning([machine('all', 5)], now)).toBe(false);
     expect(missingWorkWarning([], now)).toBe(false);
+  });
+});
+
+describe('switching what a machine runs', () => {
+  const now = new Date('2026-01-01T12:00:00Z');
+  const at = (seconds: number) => new Date(now.getTime() - seconds * 1000).toISOString();
+  const machine = (id: string, role: string, extra: Partial<Machine> = {}): Machine => ({
+    id,
+    name: id,
+    role,
+    started_at: at(3600),
+    last_seen_at: at(5),
+    ...extra,
+  });
+
+  it('is offered for a running machine whose role nobody fixed', () => {
+    expect(roleChange(machine('a', 'all'), now)).toBe('open');
+    expect(roleChange(machine('a', 'all', { role_fixed: true }), now)).toBe('fixed');
+    expect(roleChange(machine('a', 'all', { last_seen_at: at(300) }), now)).toBe('quiet');
+  });
+
+  it('runs the role it was asked to take next', () => {
+    expect(nextRole(machine('a', 'web', { requested_role: 'worker' }))).toBe('worker');
+    expect(nextRole(machine('a', 'web'))).toBe('web');
+  });
+
+  it('does not offer to switch the last worker to web', () => {
+    const machines = [machine('web-1', 'web'), machine('worker-1', 'worker')];
+    expect(leavesNoWorker(machines, 'worker-1', 'web', now)).toBe(true);
+    expect(leavesNoWorker(machines, 'worker-1', 'all', now)).toBe(false);
+    expect(leavesNoWorker(machines, 'web-1', 'worker', now)).toBe(false);
+  });
+
+  it('counts a machine already asked to work, and not one that stopped', () => {
+    const asked = [machine('web-1', 'web', { requested_role: 'worker' }), machine('worker-1', 'worker')];
+    expect(leavesNoWorker(asked, 'worker-1', 'web', now)).toBe(false);
+    const stopped = [machine('old', 'worker', { last_seen_at: at(600) }), machine('worker-1', 'worker')];
+    expect(leavesNoWorker(stopped, 'worker-1', 'web', now)).toBe(true);
   });
 });
