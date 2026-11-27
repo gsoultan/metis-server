@@ -35,6 +35,25 @@ built from `../metis`, and metis-server):
 docker compose up --build
 ```
 
+### Learning from examples
+
+**Processes → Add examples** adds two worked examples to the current project,
+each with the decision table it asks:
+
+- **Purchase approval by role.** A table decides the first approver from the
+  submitter's role: a Supervisor's request goes to an Operating Manager and
+  then the Unit Head, an Operating Manager's straight to the Unit Head. A
+  request sent back for revision goes to whoever submitted it.
+- **Equipment order.** A table decides whether an order needs approval; if it
+  does, the order runs the purchase approval as a process of its own. Then it
+  calls a public web service, posts in Slack through a connector and waits for
+  the delivery, the last two at once.
+
+It can also create the `operating-managers` and `unit-heads` groups, put the
+person in both and add them to the project's People, so one person can act
+as every approver. An example already in the project is left as it is. The
+examples are in `ui/src/domain/examples/`.
+
 ### More than one machine
 
 Point every machine at the same database and give each a role. Put the `web`

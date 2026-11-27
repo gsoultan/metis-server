@@ -1,10 +1,11 @@
 import { Tabs, Button, Group, Stack } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { Network, Table2, Plus, Upload } from 'lucide-react';
+import { GraduationCap, Network, Table2, Plus, Upload } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { DefinitionList } from './DefinitionList';
 import { DecisionList } from './DecisionList';
 import { CreationWizard } from '../components/CreationWizard';
+import { ExamplesModal } from '../components/ExamplesModal';
 import { GruleImportModal } from '../components/GruleImportModal';
 import { reportHeadline, type GruleImportReport } from '../domain/gruleImport';
 import { useNavigate } from '@tanstack/react-router';
@@ -18,6 +19,7 @@ export function Models() {
   const { tab } = Route.useSearch();
   const [wizardOpened, setWizardOpened] = useState(false);
   const [gruleOpened, setGruleOpened] = useState(false);
+  const [examplesOpened, setExamplesOpened] = useState(false);
 
   // A deployed import opens the process it made, which is where the rules now
   // run; tables alone are shown where they were added.
@@ -64,6 +66,9 @@ export function Models() {
         }
         actions={
           <Group gap="sm">
+            <Button variant="default" leftSection={<GraduationCap size={16} />} onClick={() => setExamplesOpened(true)}>
+              Add examples
+            </Button>
             <Button variant="default" leftSection={<Upload size={16} />} onClick={() => setGruleOpened(true)}>
               Import Grule rules
             </Button>
@@ -91,12 +96,14 @@ export function Models() {
         </Tabs.List>
 
         <Tabs.Panel value="processes">
-          <DefinitionList hideHeader onEditModel={handleEditProcess} />
+          <DefinitionList hideHeader onEditModel={handleEditProcess} onAddExamples={() => setExamplesOpened(true)} />
         </Tabs.Panel>
         <Tabs.Panel value="decisions">
           <DecisionList hideHeader onEdit={handleEditDecision} />
         </Tabs.Panel>
       </Tabs>
+
+      <ExamplesModal opened={examplesOpened} onClose={() => setExamplesOpened(false)} />
 
       <GruleImportModal
         opened={gruleOpened}
